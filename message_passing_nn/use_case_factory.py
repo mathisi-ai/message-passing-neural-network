@@ -1,5 +1,7 @@
 import os
 
+from message_passing_nn.infrastructure.graph_dataset import GraphDataset
+
 from message_passing_nn.data.data_preprocessor import DataPreprocessor
 from message_passing_nn.infrastructure.file_system_repository import FileSystemRepository
 from message_passing_nn.model.inferencer import Inferencer
@@ -12,11 +14,13 @@ from message_passing_nn.utils.saver import Saver
 
 
 class UseCaseFactory:
-    def __init__(self, parameters_path: str) -> None:
+    def __init__(self, parameters_path: str, test_mode: bool = False) -> None:
         self.parameters_path = parameters_path
+        self.test_mode = test_mode
         self.use_case = None
         self.grid_search_dictionary = None
         self._init_environment_variables()
+        self.data_path = self._get_data_path()
 
     def build(self, use_case_name: str):
         if use_case_name.lower() == "grid-search":
@@ -34,19 +38,19 @@ class UseCaseFactory:
             get_logger().exception("message")
 
     def _create_grid_search(self) -> GridSearch:
-        data_path = self._get_data_path()
         data_preprocessor = DataPreprocessor()
-        trainer = Trainer(data_preprocessor, os.environ['DEVICE'])
+        model_trainer = Trainer(data_preprocessor, os.environ['DEVICE'])
+        dataset = GraphDataset(self.data_path, test_mode=self.test_mode)
         saver = Saver(os.environ['MODEL_DIRECTORY'], os.environ['RESULTS_DIRECTORY'])
-        return GridSearch(data_path, data_preprocessor, trainer, self.grid_search_dictionary, saver)
+        return GridSearch(dataset, data_preprocessor, model_trainer, self.grid_search_dictionary, saver)
 
     def _create_inference(self) -> Inference:
-        data_path = self._get_data_path()
         data_preprocessor = DataPreprocessor()
         model_loader = Loader(os.environ['MODEL'])
         model_inferencer = Inferencer(data_preprocessor, os.environ['DEVICE'])
+        dataset = GraphDataset(self.data_path, test_mode=self.test_mode)
         saver = Saver(os.environ['MODEL_DIRECTORY'], os.environ['RESULTS_DIRECTORY'])
-        return Inference(data_path, data_preprocessor, model_loader, model_inferencer, saver)
+        return Inference(dataset, data_preprocessor, model_loader, model_inferencer, saver)
 
     def _init_environment_variables(self):
         self.grid_search_dictionary = {}

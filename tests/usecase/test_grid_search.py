@@ -2,6 +2,8 @@ import os
 from typing import List
 from unittest import TestCase
 
+from message_passing_nn.infrastructure.graph_dataset import GraphDataset
+
 from message_passing_nn.data.data_preprocessor import DataPreprocessor
 from message_passing_nn.model.trainer import Trainer
 from message_passing_nn.infrastructure.file_system_repository import FileSystemRepository
@@ -15,13 +17,13 @@ class TestTraining(TestCase):
         self.features = BASE_GRAPH_NODE_FEATURES
         self.adjacency_matrix = BASE_GRAPH
         self.labels = BASE_GRAPH.view(-1)
-        self.dataset = 'training-test-data'
-        self.tests_data_directory = 'tests/test_data/'
-        tests_model_directory = 'tests/model_checkpoints'
-        tests_results_directory = 'tests/grid_search_results'
+        self.dataset_name = 'training-test-data'
+        self.tests_data_directory = os.path.join('tests', 'test_data')
+        tests_model_directory = os.path.join('tests', 'model_checkpoints')
+        tests_results_directory = os.path.join('tests', 'grid_search_results')
         device = "cpu"
-        self.data_path = self.tests_data_directory + self.dataset + "/"
-        self.repository = FileSystemRepository(self.tests_data_directory, self.dataset)
+        self.data_path = os.path.join("./", self.tests_data_directory, self.dataset_name)
+        self.repository = FileSystemRepository(self.tests_data_directory, self.dataset_name)
         self.data_preprocessor = DataPreprocessor()
         self.data_preprocessor.enable_test_mode()
         self.model_trainer = Trainer(self.data_preprocessor, device)
@@ -41,14 +43,15 @@ class TestTraining(TestCase):
             "time_steps": [1],
             "validation_period": [5]
         }
-        grid_search = GridSearch(self.data_path,
+        adjacency_matrix_filenames, features_filenames, labels_filenames = self._save_test_data(dataset_size)
+        dataset = GraphDataset(self.data_path, test_mode=True)
+
+        grid_search = GridSearch(dataset,
                                  self.data_preprocessor,
                                  self.model_trainer,
                                  grid_search_dictionary,
-                                 self.saver,
-                                 test_mode=True)
+                                 self.saver)
 
-        adjacency_matrix_filenames, features_filenames, labels_filenames = self._save_test_data(dataset_size)
 
         # When
         losses = grid_search.start()
@@ -77,14 +80,15 @@ class TestTraining(TestCase):
             "time_steps": [1],
             "validation_period": [5]
         }
-        grid_search = GridSearch(self.data_path,
+        adjacency_matrix_filenames, features_filenames, labels_filenames = self._save_test_data(dataset_size)
+        dataset = GraphDataset(self.data_path, test_mode=True)
+
+        grid_search = GridSearch(dataset,
                                  self.data_preprocessor,
                                  self.model_trainer,
                                  grid_search_dictionary,
-                                 self.saver,
-                                 test_mode=True)
+                                 self.saver)
 
-        adjacency_matrix_filenames, features_filenames, labels_filenames = self._save_test_data(dataset_size)
 
         # When
         losses = grid_search.start()
@@ -113,14 +117,15 @@ class TestTraining(TestCase):
             "time_steps": [1],
             "validation_period": [5]
         }
-        grid_search = GridSearch(self.data_path,
+        adjacency_matrix_filenames, features_filenames, labels_filenames = self._save_test_data(dataset_size)
+        dataset = GraphDataset(self.data_path, test_mode=True)
+
+        grid_search = GridSearch(dataset,
                                  self.data_preprocessor,
                                  self.model_trainer,
                                  grid_search_dictionary,
-                                 self.saver,
-                                 test_mode=True)
+                                 self.saver)
 
-        adjacency_matrix_filenames, features_filenames, labels_filenames = self._save_test_data(dataset_size)
 
         # When
         losses = grid_search.start()
@@ -151,6 +156,6 @@ class TestTraining(TestCase):
                       adjacency_matrix_filenames: List[str],
                       labels_filenames: List[str]) -> None:
         for i in range(dataset_size):
-            os.remove(self.tests_data_directory + self.dataset + "/" + features_filenames[i])
-            os.remove(self.tests_data_directory + self.dataset + "/" + adjacency_matrix_filenames[i])
-            os.remove(self.tests_data_directory + self.dataset + "/" + labels_filenames[i])
+            os.remove(os.path.join(self.tests_data_directory, self.dataset_name, features_filenames[i]))
+            os.remove(os.path.join(self.tests_data_directory, self.dataset_name, adjacency_matrix_filenames[i]))
+            os.remove(os.path.join(self.tests_data_directory, self.dataset_name, labels_filenames[i]))

@@ -14,18 +14,16 @@ from message_passing_nn.utils.saver import Saver
 
 class GridSearch(UseCase):
     def __init__(self,
-                 data_path: str,
+                 dataset: GraphDataset,
                  data_preprocessor: DataPreprocessor,
                  trainer: Trainer,
                  grid_search_dictionary: Dict,
-                 saver: Saver,
-                 test_mode: bool = False) -> None:
-        self.data_path = data_path
+                 saver: Saver) -> None:
+        self.dataset = dataset
         self.data_preprocessor = data_preprocessor
         self.trainer = trainer
         self.grid_search_dictionary = grid_search_dictionary
         self.saver = saver
-        self.test_mode = test_mode
 
     def start(self) -> Dict:
         all_grid_search_configurations = self._get_all_grid_search_configurations()
@@ -76,15 +74,13 @@ class GridSearch(UseCase):
         return configuration_id, configuration_dictionary
 
     def _prepare_dataset(self, configuration_dictionary: Dict) -> Tuple[DataLoader, DataLoader, DataLoader, Tuple]:
-        dataset = GraphDataset(self.data_path, test_mode=self.test_mode)
-        dataset.enable_test_mode()
         get_logger().info("Calculating all neighbors for each node")
         training_data, validation_data, test_data = self.data_preprocessor \
-            .train_validation_test_split(dataset,
+            .train_validation_test_split(self.dataset,
                                          configuration_dictionary['batch_size'],
                                          configuration_dictionary['validation_split'],
                                          configuration_dictionary['test_split'])
-        data_dimensions = self.data_preprocessor.extract_data_dimensions(dataset)
+        data_dimensions = self.data_preprocessor.extract_data_dimensions(self.dataset)
         return training_data, validation_data, test_data, data_dimensions
 
     def _get_all_grid_search_configurations(self) -> List[Tuple[Tuple]]:

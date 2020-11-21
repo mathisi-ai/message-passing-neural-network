@@ -4,6 +4,7 @@ from unittest import TestCase
 import shutil
 from datetime import datetime
 import torch as to
+from message_passing_nn.infrastructure.graph_dataset import GraphDataset
 
 from message_passing_nn.data.data_preprocessor import DataPreprocessor
 from message_passing_nn.model import Loader, Inferencer
@@ -19,27 +20,27 @@ class TestInference(TestCase):
         features = to.ones(4, 2)
         adjacency_matrix = to.ones(4, 4)
         labels = to.ones(16)
-        dataset = 'inference-test-data'
-        tests_data_directory = 'tests/test_data/'
-        tests_model_directory = "tests/test_data/model-checkpoints-test/configuration&id__model&" + \
-                                "RNN__epochs&10__loss_function&MSE__optimizer&Adagrad__batch_size&" + \
-                                "100__validation_split&0.2__test_split&0.1__time_steps&1__validation_period&" + \
-                                "5/Epoch_5_model_state_dictionary.pth"
-        tests_results_directory = 'tests/results_inference'
+        dataset_name = 'inference-test-data'
+        tests_data_directory = os.path.join('tests', 'test_data')
+        tests_model_directory = os.path.join("tests", "test_data", "model-checkpoints-test/configuration&id__model&"
+                                             "RNN__epochs&10__loss_function&MSE__optimizer&Adagrad__batch_size&"
+                                             "100__validation_split&0.2__test_split&0.1__time_steps&"
+                                             "1__validation_period&5", "Epoch_5_model_state_dictionary.pth")
+        tests_results_directory = os.path.join('tests', 'results_inference')
         device = "cpu"
-        repository = FileSystemRepository(tests_data_directory, dataset)
-        data_path = tests_data_directory + dataset + "/"
+        repository = FileSystemRepository(tests_data_directory, dataset_name)
+        data_path = os.path.join(tests_data_directory, dataset_name)
         data_preprocessor = DataPreprocessor()
         data_preprocessor.enable_test_mode()
         loader = Loader("RNN")
         inferencer = Inferencer(data_preprocessor, device)
         saver = Saver(tests_model_directory, tests_results_directory)
-        inference = Inference(data_path,
+        dataset = GraphDataset(data_path, test_mode=True)
+        inference = Inference(dataset,
                               data_preprocessor,
                               loader,
                               inferencer,
-                              saver,
-                              test_mode=True)
+                              saver)
 
         adjacency_matrix_filenames, features_filenames, labels_filenames = self._save_test_data(adjacency_matrix,
                                                                                                 dataset_size,
@@ -60,7 +61,7 @@ class TestInference(TestCase):
                            adjacency_matrix_filenames,
                            labels_filenames,
                            tests_data_directory,
-                           dataset,
+                           dataset_name,
                            tests_results_directory)
 
     @staticmethod
@@ -83,7 +84,7 @@ class TestInference(TestCase):
                       dataset: str,
                       tests_results_directory: str) -> None:
         for i in range(dataset_size):
-            os.remove(tests_data_directory + dataset + "/" + features_filenames[i])
-            os.remove(tests_data_directory + dataset + "/" + adjacency_matrix_filenames[i])
-            os.remove(tests_data_directory + dataset + "/" + labels_filenames[i])
+            os.remove(os.path.join(tests_data_directory, dataset, features_filenames[i]))
+            os.remove(os.path.join(tests_data_directory, dataset, adjacency_matrix_filenames[i]))
+            os.remove(os.path.join(tests_data_directory, dataset, labels_filenames[i]))
         shutil.rmtree(tests_results_directory)

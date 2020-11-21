@@ -1,13 +1,14 @@
 import json
 import pickle
 
+import os
 import torch as to
 
 
 class FileSystemRepository:
-    def __init__(self, data_directory: str, dataset: str) -> None:
+    def __init__(self, data_directory: str, dataset_name: str) -> None:
         super().__init__()
-        self.data_directory = data_directory + dataset + '/'
+        self.data_directory = os.path.join(data_directory, dataset_name)
         self.test_mode = False
 
     @staticmethod
@@ -17,5 +18,5 @@ class FileSystemRepository:
         return parameters
 
     def save(self, filename: str, data_to_save: to.Tensor) -> None:
-        with open(self.data_directory + filename, 'wb') as file:
+        with open(os.path.join("./", self.data_directory, filename), 'wb') as file:
             pickle.dump(data_to_save, file)

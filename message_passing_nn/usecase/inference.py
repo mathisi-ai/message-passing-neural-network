@@ -13,18 +13,16 @@ from message_passing_nn.utils.logger import get_logger
 
 class Inference(UseCase):
     def __init__(self,
-                 data_path: str,
+                 dataset: GraphDataset,
                  data_preprocessor: DataPreprocessor,
                  loader: Loader,
                  inferencer: Inferencer,
-                 saver: Saver,
-                 test_mode: bool = False) -> None:
-        self.data_path = data_path
+                 saver: Saver) -> None:
+        self.dataset = dataset
         self.data_preprocessor = data_preprocessor
         self.loader = loader
         self.inferencer = inferencer
         self.saver = saver
-        self.test_mode = test_mode
 
     def start(self) -> None:
         get_logger().info('Started Inference')
@@ -36,7 +34,6 @@ class Inference(UseCase):
         get_logger().info('Finished Inference')
 
     def _prepare_dataset(self) -> Tuple[DataLoader, Tuple]:
-        dataset = GraphDataset(self.data_path, test_mode=self.test_mode)
-        inference_dataset = self.data_preprocessor.get_dataloader(dataset)
-        data_dimensions = self.data_preprocessor.extract_data_dimensions(dataset)
+        inference_dataset = self.data_preprocessor.get_dataloader(self.dataset)
+        data_dimensions = self.data_preprocessor.extract_data_dimensions(self.dataset)
         return inference_dataset, data_dimensions
