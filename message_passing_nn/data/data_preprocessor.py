@@ -1,4 +1,3 @@
-import logging
 from typing import Tuple, List
 
 import torch as to
@@ -7,8 +6,9 @@ from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
 from tqdm import tqdm
 
-from message_passing_nn.infrastructure.graph_dataset import GraphDataset
 from message_passing_nn.data.preprocessor import Preprocessor
+from message_passing_nn.infrastructure.graph_dataset import GraphDataset
+from message_passing_nn.utils.logger import get_logger
 
 
 class DataPreprocessor(Preprocessor):
@@ -37,10 +37,10 @@ class DataPreprocessor(Preprocessor):
             test_data = DataLoader(dataset, batch_size=batch_size, sampler=test_sampler)
         else:
             test_data = DataLoader(GraphDataset([]))
-        self.get_logger().info("Train/validation/test split: " + "/".join([str(len(training_data)),
-                                                                           str(len(validation_data)),
-                                                                           str(len(test_data))])
-                               + " batches of " + str(batch_size))
+        get_logger().info("Train/validation/test split: " + "/".join([str(len(training_data)),
+                                                                      str(len(validation_data)),
+                                                                      str(len(test_data))])
+                          + " batches of " + str(batch_size))
         return training_data, validation_data, test_data
 
     @staticmethod
@@ -99,7 +99,3 @@ class DataPreprocessor(Preprocessor):
 
     def enable_test_mode(self) -> None:
         self.test_mode = True
-
-    @staticmethod
-    def get_logger() -> logging.Logger:
-        return logging.getLogger('message_passing_nn')

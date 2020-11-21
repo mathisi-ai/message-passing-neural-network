@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 
 
-class Usecase(metaclass=ABCMeta):
+class UseCase(metaclass=ABCMeta):
     @abstractmethod
     def start(self) -> None:
         pass

@@ -1,5 +1,3 @@
-import logging
-import os
 from typing import Dict, List, Tuple
 
 import itertools
@@ -9,11 +7,12 @@ from torch.utils.data.dataloader import DataLoader
 from message_passing_nn.data.data_preprocessor import DataPreprocessor
 from message_passing_nn.infrastructure.graph_dataset import GraphDataset
 from message_passing_nn.model.trainer import Trainer
-from message_passing_nn.usecase import Usecase
+from message_passing_nn.usecase import UseCase
+from message_passing_nn.utils.logger import get_logger
 from message_passing_nn.utils.saver import Saver
 
 
-class GridSearch(Usecase):
+class GridSearch(UseCase):
     def __init__(self,
                  data_path: str,
                  data_preprocessor: DataPreprocessor,
@@ -38,7 +37,7 @@ class GridSearch(Usecase):
             configuration_id, configuration_dictionary = self._get_configuration_dictionary(configuration)
             losses = self._search_configuration(configuration_id, configuration_dictionary, losses)
         self.saver.save_results(configuration_id, losses)
-        self.get_logger().info('Finished Training')
+        get_logger().info('Finished Training')
         return losses
 
     def _search_configuration(self, configuration_id: str, configuration_dictionary: Dict, losses: Dict) -> Dict:
@@ -46,7 +45,7 @@ class GridSearch(Usecase):
         self.trainer.instantiate_attributes(data_dimensions, configuration_dictionary)
         losses = self._update_losses_with_configuration_id(configuration_dictionary, losses)
         validation_loss_max = np.inf
-        self.get_logger().info('Started Training')
+        get_logger().info('Started Training')
         for epoch in range(1, configuration_dictionary['epochs'] + 1):
             training_loss = self.trainer.do_train(training_data, epoch)
             losses['training_loss'][configuration_dictionary["configuration_id"]].update({epoch: training_loss})
@@ -79,7 +78,7 @@ class GridSearch(Usecase):
     def _prepare_dataset(self, configuration_dictionary: Dict) -> Tuple[DataLoader, DataLoader, DataLoader, Tuple]:
         dataset = GraphDataset(self.data_path, test_mode=self.test_mode)
         dataset.enable_test_mode()
-        self.get_logger().info("Calculating all neighbors for each node")
+        get_logger().info("Calculating all neighbors for each node")
         training_data, validation_data, test_data = self.data_preprocessor \
             .train_validation_test_split(dataset,
                                          configuration_dictionary['batch_size'],
@@ -93,7 +92,3 @@ class GridSearch(Usecase):
         for key in self.grid_search_dictionary.keys():
             all_grid_search_configurations.append([(key, value) for value in self.grid_search_dictionary[key]])
         return list(itertools.product(*all_grid_search_configurations))
-
-    @staticmethod
-    def get_logger() -> logging.Logger:
-        return logging.getLogger('message_passing_nn')

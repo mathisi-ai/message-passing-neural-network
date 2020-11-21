@@ -1,0 +1,21 @@
+{
+  "DATABASE": "pdb_test",
+  "POSTGRES_HOST": "localhost",
+  "POSTGRES_PORT": "5432",
+  "POSTGRES_USERNAME": "postgres",
+  "POSTGRES_PASSWORD": "postgres",
+  "DATASET_NAME": "sample-dataset",
+  "DATA_DIRECTORY": "data/",
+  "MODEL_DIRECTORY": "model_checkpoints",
+  "RESULTS_DIRECTORY": "results_grid_search",
+  "MODEL": "RNN",
+  "DEVICE": "cpu",
+  "EPOCHS": "10",
+  "LOSS_FUNCTION": "MSE",
+  "OPTIMIZER": "Adagrad",
+  "BATCH_SIZE": "100",
+  "VALIDATION_SPLIT": "0.2",
+  "TEST_SPLIT": "0.1",
+  "TIME_STEPS": "1",
+  "VALIDATION_PERIOD": "5"
+}

@@ -1,4 +1,3 @@
-import logging
 import os
 import pickle
 from typing import List, Tuple
@@ -6,6 +5,8 @@ from typing import List, Tuple
 import torch as to
 from torch.utils.data import Dataset
 from tqdm import tqdm
+
+from message_passing_nn.utils.logger import get_logger
 
 
 class GraphDataset(Dataset):
@@ -23,7 +24,7 @@ class GraphDataset(Dataset):
         return self.dataset[index][0], self.dataset[index][1], self.dataset[index][2], self.dataset[index][3]
 
     def _load_data(self) -> List[Tuple[to.Tensor, to.Tensor, to.Tensor, str]]:
-        self.get_logger().info("Loading dataset")
+        get_logger().info("Loading dataset")
         files_in_path = self._extract_name_prefixes_from_filenames()
         dataset = []
         size = 0
@@ -34,10 +35,11 @@ class GraphDataset(Dataset):
                 dataset.append(
                     (self._get_features(filename), self._get_all_neighbors(filename), self._get_labels(filename),
                      filename))
-            except:
-                self.get_logger().info("Skipped " + filename)
+            except Exception as e:
+                get_logger().info(e)
+                get_logger().info("Skipped " + filename)
             size += self._get_size(dataset[-1])
-        self.get_logger().info(
+        get_logger().info(
             "Loaded " + str(len(dataset)) + " files. Size: " + str(int(size * 0.000001)) + " MB")
         return dataset
 
@@ -50,17 +52,17 @@ class GraphDataset(Dataset):
         return [dataset[index][2] for index in range(len(dataset))]
 
     def _get_labels(self, filename: str) -> to.Tensor:
-        with open(self.data_directory + filename + 'labels.pickle', 'rb') as labels_file:
+        with open(os.path.join(self.data_directory, filename + 'labels.pickle'), 'rb') as labels_file:
             labels = pickle.load(labels_file).float()
         return labels
 
     def _get_features(self, filename: str) -> to.Tensor:
-        with open(self.data_directory + filename + 'features.pickle', 'rb') as features_file:
+        with open(os.path.join(self.data_directory, filename + 'features.pickle'), 'rb') as features_file:
             features = pickle.load(features_file).float()
         return features
 
     def _get_all_neighbors(self, filename: str) -> to.Tensor:
-        with open(self.data_directory + filename + 'adjacency-matrix.pickle', 'rb') as adjacency_matrix_file:
+        with open(os.path.join(self.data_directory, filename + 'adjacency-matrix.pickle'), 'rb') as adjacency_matrix_file:
             adjacency_matrix = pickle.load(adjacency_matrix_file).float()
             number_of_nodes = adjacency_matrix.shape[0]
             all_neighbors_list = []
@@ -97,7 +99,3 @@ class GraphDataset(Dataset):
 
     def enable_test_mode(self) -> None:
         self.test_mode = True
-
-    @staticmethod
-    def get_logger() -> logging.Logger:
-        return logging.getLogger('message_passing_nn')

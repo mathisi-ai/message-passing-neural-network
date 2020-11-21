@@ -1,4 +1,3 @@
-import logging
 import os
 import pickle
 from datetime import datetime
@@ -8,6 +7,7 @@ import torch as to
 from pandas import pandas as pd
 
 from message_passing_nn.fixtures.filenames import *
+from message_passing_nn.utils.logger import get_logger
 
 
 class Saver:
@@ -23,7 +23,7 @@ class Saver:
                                                                                  str(epoch),
                                                                                  MODEL_STATE_DICTIONARY])])
         to.save(model.state_dict(), path_and_filename)
-        self.get_logger().info("Saved model checkpoint in " + path_and_filename)
+        get_logger().info("Saved model checkpoint in " + path_and_filename)
 
     def save_results(self, configuration_id: str, results: Dict) -> None:
         current_folder = self._join_path([self.results_directory, configuration_id])
@@ -34,7 +34,7 @@ class Saver:
                                              self._join_strings([datetime.now().strftime("%d-%b-%YT%H_%M"),
                                                                  RESULTS_CSV])])
         results_dataframe.to_csv(path_and_filename)
-        self.get_logger().info("Saved results in " + path_and_filename)
+        get_logger().info("Saved results in " + path_and_filename)
 
     def save_distance_maps(self, configuration_id: str, distance_maps: List[Tuple]):
         current_folder = self._join_path([self.results_directory, configuration_id])
@@ -45,7 +45,7 @@ class Saver:
                                                                  DISTANCE_MAPS])])
         with open(path_and_filename, 'wb') as file:
             pickle.dump(distance_maps, file)
-        self.get_logger().info("Saved inference outputs in " + path_and_filename)
+        get_logger().info("Saved inference outputs in " + path_and_filename)
 
     @staticmethod
     def _join_strings(fields: List) -> str:
@@ -62,7 +62,3 @@ class Saver:
     @staticmethod
     def _join_path(fields: List) -> str:
         return "/".join(fields)
-
-    @staticmethod
-    def get_logger() -> logging.Logger:
-        return logging.getLogger('message_passing_nn')

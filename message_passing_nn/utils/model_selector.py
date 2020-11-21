@@ -1,7 +1,6 @@
-import logging
-
 from torch import nn
 
+from message_passing_nn.utils.logger import get_logger
 from message_passing_nn.utils.models import models
 
 
@@ -16,7 +15,3 @@ class ModelSelector:
         else:
             get_logger().info("The " + model_selection + " model is not available")
             raise Exception
-
-
-def get_logger() -> logging.Logger:
-    return logging.getLogger('message_passing_nn')

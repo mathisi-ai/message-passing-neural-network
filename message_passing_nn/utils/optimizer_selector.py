@@ -1,7 +1,6 @@
-import logging
-
 from torch.optim.optimizer import Optimizer
 
+from message_passing_nn.utils.logger import get_logger
 from message_passing_nn.utils.optimizers import optimizers
 
 
@@ -16,7 +15,3 @@ class OptimizerSelector:
         else:
             get_logger().info("The " + optimizer_selection + " is not available")
             raise Exception
-
-
-def get_logger() -> logging.Logger:
-    return logging.getLogger('message_passing_nn')

@@ -1,4 +1,3 @@
-import logging
 from typing import Dict, Any, Tuple
 
 import numpy as np
@@ -8,6 +7,7 @@ from torch.optim.optimizer import Optimizer
 from torch.utils.data.dataloader import DataLoader
 
 from message_passing_nn.data.preprocessor import Preprocessor
+from message_passing_nn.utils.logger import get_logger
 from message_passing_nn.utils.loss_function_selector import LossFunctionSelector
 from message_passing_nn.utils.model_selector import ModelSelector
 from message_passing_nn.utils.optimizer_selector import OptimizerSelector
@@ -36,19 +36,19 @@ class Trainer:
                                 fully_connected_layer_input_size=number_of_nodes * number_of_node_features,
                                 fully_connected_layer_output_size=fully_connected_layer_output_size,
                                 device=self.device)
-        self.get_logger().info('Loaded the ' + configuration_dictionary['model'] +
-                               ' model. Model weights size: ' + self.model.get_model_size() + ' MB')
+        get_logger().info('Loaded the ' + configuration_dictionary['model'] +
+                          ' model. Model weights size: ' + self.model.get_model_size() + ' MB')
         self.model.to(self.device)
         self.loss_function = self._instantiate_the_loss_function(
             LossFunctionSelector.load_loss_function(configuration_dictionary['loss_function']))
-        self.get_logger().info('Loss function: ' + configuration_dictionary['loss_function'])
+        get_logger().info('Loss function: ' + configuration_dictionary['loss_function'])
         self.optimizer = self._instantiate_the_optimizer(
             OptimizerSelector.load_optimizer(configuration_dictionary['optimizer']))
-        self.get_logger().info('Optimizer: ' + configuration_dictionary['optimizer'])
+        get_logger().info('Optimizer: ' + configuration_dictionary['optimizer'])
 
     def do_train(self, training_data: DataLoader, epoch: int) -> float:
         training_loss = np.average(list(map(self._do_train_batch, training_data)))
-        self.get_logger().info('[Iteration %d] training loss: %.6f' % (epoch, training_loss))
+        get_logger().info('[Iteration %d] training loss: %.6f' % (epoch, training_loss))
         return training_loss
 
     def _do_train_batch(self, training_data: DataLoader) -> float:
@@ -83,11 +83,11 @@ class Trainer:
                     evaluation_loss.append(float(loss))
                 evaluation_loss = np.average(evaluation_loss)
                 if epoch is not None:
-                    self.get_logger().info('[Iteration %d] validation loss: %.6f' % (epoch, evaluation_loss))
+                    get_logger().info('[Iteration %d] validation loss: %.6f' % (epoch, evaluation_loss))
                 else:
-                    self.get_logger().info('Test loss: %.6f' % evaluation_loss)
+                    get_logger().info('Test loss: %.6f' % evaluation_loss)
             else:
-                self.get_logger().warning('No evaluation data found!')
+                get_logger().warning('No evaluation data found!')
         return evaluation_loss
 
     def _do_backpropagate(self, loss: to.Tensor) -> None:
@@ -109,7 +109,3 @@ class Trainer:
     @staticmethod
     def _get_current_batch_size(features: to.Tensor) -> int:
         return len(features)
-
-    @staticmethod
-    def get_logger() -> logging.Logger:
-        return logging.getLogger('message_passing_nn')
