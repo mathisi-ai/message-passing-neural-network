@@ -7,11 +7,13 @@ from torch.utils.data import Dataset
 from tqdm import tqdm
 
 from message_passing_nn.utils.logger import get_logger
+from message_passing_nn.utils.postgres_connector import PostgresConnector
 
 
 class GraphDataset(Dataset):
-    def __init__(self, data_directory: str, test_mode: bool = False) -> None:
+    def __init__(self, data_directory: str, postgres_connector: PostgresConnector = None, test_mode: bool = False) -> None:
         self.data_directory = data_directory
+        self.postgres_connector = postgres_connector
         self.test_mode = test_mode
         self.dataset = self._load_data() if self.data_directory else []
 

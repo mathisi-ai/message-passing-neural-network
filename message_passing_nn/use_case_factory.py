@@ -11,6 +11,7 @@ from message_passing_nn.usecase.grid_search import GridSearch
 from message_passing_nn.usecase.inference import Inference
 from message_passing_nn.utils.logger import get_logger
 from message_passing_nn.utils.saver import Saver
+from message_passing_nn.utils.postgres_connector import PostgresConnector
 
 
 class UseCaseFactory:
@@ -40,7 +41,8 @@ class UseCaseFactory:
     def _create_grid_search(self) -> GridSearch:
         data_preprocessor = DataPreprocessor()
         model_trainer = Trainer(data_preprocessor, os.environ['DEVICE'])
-        dataset = GraphDataset(self.data_path, test_mode=self.test_mode)
+        postgres_connector = PostgresConnector()
+        dataset = GraphDataset(self.data_path, postgres_connector=postgres_connector, test_mode=self.test_mode)
         saver = Saver(os.environ['MODEL_DIRECTORY'], os.environ['RESULTS_DIRECTORY'])
         return GridSearch(dataset, data_preprocessor, model_trainer, self.grid_search_dictionary, saver)
 
@@ -48,7 +50,8 @@ class UseCaseFactory:
         data_preprocessor = DataPreprocessor()
         model_loader = Loader(os.environ['MODEL'])
         model_inferencer = Inferencer(data_preprocessor, os.environ['DEVICE'])
-        dataset = GraphDataset(self.data_path, test_mode=self.test_mode)
+        postgres_connector = PostgresConnector()
+        dataset = GraphDataset(self.data_path, postgres_connector=postgres_connector, test_mode=self.test_mode)
         saver = Saver(os.environ['MODEL_DIRECTORY'], os.environ['RESULTS_DIRECTORY'])
         return Inference(dataset, data_preprocessor, model_loader, model_inferencer, saver)
 

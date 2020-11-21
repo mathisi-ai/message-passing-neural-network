@@ -22,7 +22,7 @@ class TestInference(TestCase):
         labels = to.ones(16)
         dataset_name = 'inference-test-data'
         tests_data_directory = os.path.join('tests', 'test_data')
-        tests_model_directory = os.path.join("tests", "test_data", "model-checkpoints-test/configuration&id__model&"
+        tests_model_directory = os.path.join("tests", "test_data", "model-checkpoints-test", "configuration&id__model&"
                                              "RNN__epochs&10__loss_function&MSE__optimizer&Adagrad__batch_size&"
                                              "100__validation_split&0.2__test_split&0.1__time_steps&"
                                              "1__validation_period&5", "Epoch_5_model_state_dictionary.pth")

@@ -1,9 +1,9 @@
 {
-  "DATABASE": "pdb_test",
   "POSTGRES_HOST": "localhost",
   "POSTGRES_PORT": "5432",
   "POSTGRES_USERNAME": "postgres",
   "POSTGRES_PASSWORD": "postgres",
+  "DATABASE": "pdb_test",
   "DATASET_NAME": "sample-dataset",
   "DATA_DIRECTORY": "data",
   "MODEL_DIRECTORY": "model_checkpoints",
