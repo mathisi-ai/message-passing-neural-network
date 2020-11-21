@@ -2,7 +2,7 @@ import logging
 
 import click
 
-from message_passing_nn.create_message_passing_nn import create_grid_search, create_inference
+from message_passing_nn.use_case_factory import UseCaseFactory
 from message_passing_nn.utils.logger import setup_logging, get_logger
 
 
@@ -16,16 +16,19 @@ def main(debug):
 @click.command('grid-search', help='Starts the grid search')
 @click.argument("parameters_path", envvar='PARAMETERS_PATH')
 def start_training(parameters_path: str) -> None:
-    message_passing_nn = create_grid_search(parameters_path)
-    message_passing_nn.start()
+    get_logger().info("Starting grid search")
+    use_case = UseCaseFactory(parameters_path)
+    grid_search = use_case.build("grid-search")
+    grid_search.start()
 
 
 @click.command('inference', help='Starts the inference')
 @click.argument("parameters_path", envvar='PARAMETERS_PATH')
 def start_inference(parameters_path: str) -> None:
     get_logger().info("Starting inference")
-    message_passing_nn = create_inference(parameters_path)
-    message_passing_nn.start()
+    use_case = UseCaseFactory(parameters_path)
+    inference = use_case.build("inference")
+    inference.start()
 
 
 main.add_command(start_training)

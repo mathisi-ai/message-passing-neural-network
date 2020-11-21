@@ -1,3 +1,2 @@
-from message_passing_nn.create_message_passing_nn import create_grid_search
-from message_passing_nn.create_message_passing_nn import create_inference
+from message_passing_nn.use_case_factory import UseCaseFactory
 from message_passing_nn.cli import main
