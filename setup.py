@@ -3,10 +3,10 @@ from torch.utils.cpp_extension import BuildExtension, CUDAExtension, CppExtensio
 
 setup(
     name='message-passing-nn',
-    version='1.6.0',
+    version='2.0.0',
     packages=find_packages(exclude=["tests"]),
     url='https://github.com/kovanostra/message-passing-nn',
-    download_url='https://github.com/kovanostra/message-passing-nn/archive/1.6.0.tar.gz',
+    download_url='https://github.com/kovanostra/message-passing-nn/archive/2.0.0.tar.gz',
     keywords=['MESSAGE PASSING', 'NEURAL NETWORK', 'RNN', 'GRU'],
     license='MIT',
     author='Michail Kovanis',
