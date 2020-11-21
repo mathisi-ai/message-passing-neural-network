@@ -20,7 +20,7 @@ class TestGraphPreprocessor(TestCase):
                                    [0, 1, 3, -1],
                                    [2, -1, -1, -1]])
         labels = BASE_GRAPH.view(-1)
-        dataset = GraphDataset("")
+        dataset = GraphDataset()
         dataset.enable_test_mode()
         dataset.dataset = [(features, all_neighbors, labels, i) for i in range(dataset_length)]
         train_validation_test_split_expected = [7, 2, 1]
@@ -44,7 +44,7 @@ class TestGraphPreprocessor(TestCase):
                                    [0, 1, 3, -1],
                                    [2, -1, -1, -1]])
         labels = BASE_GRAPH.view(-1)
-        dataset = GraphDataset("")
+        dataset = GraphDataset()
         dataset.enable_test_mode()
         dataset.dataset = [(features, all_neighbors, labels, i) for i in range(dataset_length)]
         data_dimensions_expected = (features.size(), labels.size())

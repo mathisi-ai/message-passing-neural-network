@@ -21,7 +21,6 @@ class UseCaseFactory:
         self.use_case = None
         self.grid_search_dictionary = None
         self._init_environment_variables()
-        self.data_path = self._get_data_path()
 
     def build(self, use_case_name: str):
         if use_case_name.lower() == "grid-search":
@@ -42,16 +41,17 @@ class UseCaseFactory:
         data_preprocessor = DataPreprocessor()
         model_trainer = Trainer(data_preprocessor, os.environ['DEVICE'])
         postgres_connector = PostgresConnector()
-        dataset = GraphDataset(self.data_path, postgres_connector=postgres_connector, test_mode=self.test_mode)
+        dataset = GraphDataset(postgres_connector)
         saver = Saver(os.environ['MODEL_DIRECTORY'], os.environ['RESULTS_DIRECTORY'])
         return GridSearch(dataset, data_preprocessor, model_trainer, self.grid_search_dictionary, saver)
 
-    def _create_inference(self) -> Inference:
+    @staticmethod
+    def _create_inference() -> Inference:
         data_preprocessor = DataPreprocessor()
         model_loader = Loader(os.environ['MODEL'])
         model_inferencer = Inferencer(data_preprocessor, os.environ['DEVICE'])
         postgres_connector = PostgresConnector()
-        dataset = GraphDataset(self.data_path, postgres_connector=postgres_connector, test_mode=self.test_mode)
+        dataset = GraphDataset(postgres_connector)
         saver = Saver(os.environ['MODEL_DIRECTORY'], os.environ['RESULTS_DIRECTORY'])
         return Inference(dataset, data_preprocessor, model_loader, model_inferencer, saver)
 
@@ -65,7 +65,3 @@ class UseCaseFactory:
                 self.grid_search_dictionary.update({key.lower(): value})
             else:
                 raise RuntimeError("Incorrect parameter type. Please use only str and list types!")
-
-    @staticmethod
-    def _get_data_path() -> str:
-        return os.path.join("./", os.environ['DATA_DIRECTORY'], os.environ['DATASET_NAME'])

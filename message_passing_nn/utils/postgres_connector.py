@@ -4,6 +4,7 @@ import psycopg2
 
 class PostgresConnector:
     def __init__(self):
+        self._table = os.environ['TABLE']
         self._connection = None
         self._cursor = None
 
@@ -15,8 +16,8 @@ class PostgresConnector:
                                             port=os.environ["POSTGRES_PORT"])
         self._cursor = self._connection.cursor()
 
-    def execute_query(self, fields: list, table: str, where: str = None, order_by: list = None, limit: int = None):
-        sql = """select {} from {} """.format(",".join(fields), table)
+    def execute_query(self, fields: list, where: str = None, order_by: list = None, limit: int = None):
+        sql = """select {} from {} """.format(",".join(fields), self._table)
         if where:
             sql += """where {} """.format(where)
         if order_by:

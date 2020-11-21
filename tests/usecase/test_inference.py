@@ -35,7 +35,7 @@ class TestInference(TestCase):
         loader = Loader("RNN")
         inferencer = Inferencer(data_preprocessor, device)
         saver = Saver(tests_model_directory, tests_results_directory)
-        dataset = GraphDataset(data_path, test_mode=True)
+        dataset = GraphDataset()
         inference = Inference(dataset,
                               data_preprocessor,
                               loader,

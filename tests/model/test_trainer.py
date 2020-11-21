@@ -46,7 +46,7 @@ class TestTrainer(TestCase):
                                    [0, 2, -1, -1],
                                    [0, 1, 3, -1],
                                    [2, -1, -1, -1]])
-        dataset = GraphDataset("")
+        dataset = GraphDataset()
         dataset.enable_test_mode()
         tag = 'tag'
         dataset.dataset = [(BASE_GRAPH_NODE_FEATURES, all_neighbors, BASE_GRAPH.view(-1), tag)]
@@ -67,7 +67,7 @@ class TestTrainer(TestCase):
                                    [0, 2, -1, -1],
                                    [0, 1, 3, -1],
                                    [2, -1, -1, -1]])
-        dataset = GraphDataset("")
+        dataset = GraphDataset()
         dataset.enable_test_mode()
         tag = 'tag'
         dataset.dataset = [(BASE_GRAPH_NODE_FEATURES, all_neighbors, BASE_GRAPH.view(-1), tag)]

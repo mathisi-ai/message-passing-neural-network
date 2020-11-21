@@ -44,7 +44,7 @@ class TestTraining(TestCase):
             "validation_period": [5]
         }
         adjacency_matrix_filenames, features_filenames, labels_filenames = self._save_test_data(dataset_size)
-        dataset = GraphDataset(self.data_path, test_mode=True)
+        dataset = GraphDataset()
 
         grid_search = GridSearch(dataset,
                                  self.data_preprocessor,
@@ -81,7 +81,7 @@ class TestTraining(TestCase):
             "validation_period": [5]
         }
         adjacency_matrix_filenames, features_filenames, labels_filenames = self._save_test_data(dataset_size)
-        dataset = GraphDataset(self.data_path, test_mode=True)
+        dataset = GraphDataset()
 
         grid_search = GridSearch(dataset,
                                  self.data_preprocessor,
@@ -118,7 +118,7 @@ class TestTraining(TestCase):
             "validation_period": [5]
         }
         adjacency_matrix_filenames, features_filenames, labels_filenames = self._save_test_data(dataset_size)
-        dataset = GraphDataset(self.data_path, test_mode=True)
+        dataset = GraphDataset()
 
         grid_search = GridSearch(dataset,
                                  self.data_preprocessor,

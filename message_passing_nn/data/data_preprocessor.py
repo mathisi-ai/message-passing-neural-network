@@ -32,11 +32,11 @@ class DataPreprocessor(Preprocessor):
         if validation_split:
             validation_data = DataLoader(dataset, batch_size=batch_size, sampler=validation_sampler)
         else:
-            validation_data = DataLoader(GraphDataset([]))
+            validation_data = DataLoader(GraphDataset())
         if test_split:
             test_data = DataLoader(dataset, batch_size=batch_size, sampler=test_sampler)
         else:
-            test_data = DataLoader(GraphDataset([]))
+            test_data = DataLoader(GraphDataset())
         get_logger().info("Train/validation/test split: " + "/".join([str(len(training_data)),
                                                                       str(len(validation_data)),
                                                                       str(len(test_data))])
