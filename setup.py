@@ -16,6 +16,8 @@ setup(
         'numpy==1.17.4',
         'pandas==1.0.3',
         'torch==1.5.0',
+        'torchvision==0.6.0',
+        'psycopg2==2.8.6',
         'tqdm'
     ],
     entry_points={
