@@ -14,17 +14,14 @@ from message_passing_nn.utils.optimizer_selector import OptimizerSelector
 
 
 class Trainer:
-    def __init__(self, preprocessor: Preprocessor, device: str, normalize: bool = False) -> None:
+    def __init__(self, preprocessor: Preprocessor, device: str) -> None:
         self.preprocessor = preprocessor
         self.device = device
-        self.normalize = normalize
         self.model = None
         self.loss_function = None
         self.optimizer = None
 
-    def instantiate_attributes(self,
-                               data_dimensions: Tuple,
-                               configuration_dictionary: Dict) -> None:
+    def instantiate_attributes(self, data_dimensions: Tuple, configuration_dictionary: Dict) -> None:
         node_features_size, labels_size = data_dimensions
         number_of_nodes = node_features_size[0]
         number_of_node_features = node_features_size[1]
@@ -57,9 +54,6 @@ class Trainer:
                                                 all_neighbors.to(self.device),
                                                 labels.to(self.device))
         current_batch_size = self._get_current_batch_size(labels)
-        if self.normalize:
-            node_features = self.preprocessor.normalize(node_features, self.device)
-            labels = self.preprocessor.normalize(labels, self.device)
         self.optimizer.zero_grad()
         outputs = self.model(node_features, all_neighbors, batch_size=current_batch_size)
         loss = self.loss_function(outputs, labels)
@@ -74,9 +68,6 @@ class Trainer:
                     node_features, all_neighbors, labels_validation = (node_features.to(self.device),
                                                                        all_neighbors.to(self.device),
                                                                        labels_validation.to(self.device))
-                    if self.normalize:
-                        node_features = self.preprocessor.normalize(node_features, self.device)
-                        labels_validation = self.preprocessor.normalize(labels_validation, self.device)
                     current_batch_size = self._get_current_batch_size(labels_validation)
                     outputs = self.model(node_features, all_neighbors, current_batch_size)
                     loss = self.loss_function(outputs, labels_validation)

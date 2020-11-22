@@ -28,6 +28,23 @@ class PostgresConnector:
         self._cursor.execute(sql)
         return self._cursor.fetchall()
 
+    def execute_insert_dataset(self, pdb_code, features, neighbors, labels):
+        sql = """insert into {} (pdb_code, features, neighbors, labels) """.format(self._table)
+        sql += """values ('{}', '{}', '{}', '{}') """.format(pdb_code, features, neighbors, labels)
+        sql += """on conflict do nothing;"""
+        self._cursor.execute(sql)
+        self._connection.commit()
+
+    def create_table(self, table_name: str, fields: str):
+        sql = """create table if not exists {} {};""".format(table_name, fields)
+        self._cursor.execute(sql)
+        self._connection.commit()
+
+    def truncate_table(self, table_name: str):
+        sql = """truncate table {};""".format(table_name)
+        self._cursor.execute(sql)
+        self._connection.commit()
+
     def close_connection(self):
         self._cursor.close()
         self._connection.close()

@@ -7,8 +7,8 @@ from message_passing_nn.infrastructure.file_system_repository import FileSystemR
 from message_passing_nn.model.inferencer import Inferencer
 from message_passing_nn.model.loader import Loader
 from message_passing_nn.model.trainer import Trainer
-from message_passing_nn.usecase.grid_search import GridSearch
-from message_passing_nn.usecase.inference import Inference
+from message_passing_nn.use_case.grid_search import GridSearch
+from message_passing_nn.use_case.inference import Inference
 from message_passing_nn.utils.logger import get_logger
 from message_passing_nn.utils.saver import Saver
 from message_passing_nn.utils.postgres_connector import PostgresConnector

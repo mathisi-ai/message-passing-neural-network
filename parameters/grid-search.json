@@ -4,9 +4,9 @@
   "POSTGRES_USERNAME": "postgres",
   "POSTGRES_PASSWORD": "postgres",
   "DATABASE": "pdb_test",
-  "TABLE": "test_dataset",
-  "MODEL_DIRECTORY": "model_checkpoints",
-  "RESULTS_DIRECTORY": "results_grid_search",
+  "TABLE": "message_passing_tests",
+  "MODEL_DIRECTORY": "output/model_checkpoints",
+  "RESULTS_DIRECTORY": "output/results_grid_search",
   "DEVICE": "cpu",
   "MODEL": ["RNN"],
   "EPOCHS": [10],
@@ -16,5 +16,5 @@
   "VALIDATION_SPLIT": [0.2],
   "TEST_SPLIT": [0.1],
   "TIME_STEPS": [1],
-  "VALIDATION_PERIOD": [5]
+  "VALIDATION_PERIOD": [7]
 }

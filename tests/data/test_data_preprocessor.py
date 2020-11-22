@@ -4,25 +4,21 @@ import torch as to
 from message_passing_nn.infrastructure.graph_dataset import GraphDataset
 
 from message_passing_nn.data.data_preprocessor import DataPreprocessor
-from tests.fixtures.matrices_and_vectors import BASE_GRAPH, BASE_GRAPH_NODE_FEATURES
+from tests.fixtures.postgres_variables import TEST_DATASET
+from tests.fixtures.matrices_and_vectors import BASE_GRAPH, BASE_GRAPH_NODE_FEATURES, FEATURES_SERIALIZED, \
+    NEIGHBORS_SERIALIZED, LABELS_SERIALIZED
+from message_passing_nn.utils.postgres_connector import PostgresConnector
 
 
 class TestGraphPreprocessor(TestCase):
     def setUp(self) -> None:
         self.data_preprocessor = DataPreprocessor()
+        self.postgres_connector = PostgresConnector()
 
     def test_train_validation_test_split(self):
         # Given
-        dataset_length = 10
-        features = BASE_GRAPH_NODE_FEATURES
-        all_neighbors = to.tensor([[1, 2, -1, -1],
-                                   [0, 2, -1, -1],
-                                   [0, 1, 3, -1],
-                                   [2, -1, -1, -1]])
-        labels = BASE_GRAPH.view(-1)
-        dataset = GraphDataset()
-        dataset.enable_test_mode()
-        dataset.dataset = [(features, all_neighbors, labels, i) for i in range(dataset_length)]
+        self._insert_test_data(dataset_size=10)
+        dataset = GraphDataset(self.postgres_connector)
         train_validation_test_split_expected = [7, 2, 1]
 
         # When
@@ -34,26 +30,20 @@ class TestGraphPreprocessor(TestCase):
 
         # Then
         self.assertEqual(train_validation_test_split_expected, train_validation_test_split)
+        self._truncate_table()
 
     def test_extract_data_dimensions(self):
         # Given
-        dataset_length = 1
-        features = BASE_GRAPH_NODE_FEATURES
-        all_neighbors = to.tensor([[1, 2, -1, -1],
-                                   [0, 2, -1, -1],
-                                   [0, 1, 3, -1],
-                                   [2, -1, -1, -1]])
-        labels = BASE_GRAPH.view(-1)
-        dataset = GraphDataset()
-        dataset.enable_test_mode()
-        dataset.dataset = [(features, all_neighbors, labels, i) for i in range(dataset_length)]
-        data_dimensions_expected = (features.size(), labels.size())
+        self._insert_test_data(dataset_size=1)
+        dataset = GraphDataset(self.postgres_connector)
+        data_dimensions_expected = (to.Size([4, 4]), to.Size([7]))
 
         # When
         data_dimensions = self.data_preprocessor.extract_data_dimensions(dataset)
 
         # Then
         self.assertEqual(data_dimensions_expected, data_dimensions)
+        self._truncate_table()
 
     def test_flatten_when_sizes_match(self):
         # Given
@@ -80,3 +70,18 @@ class TestGraphPreprocessor(TestCase):
 
         # Then
         self.assertTrue(to.allclose(tensors_flattened_expected, tensors_flattened))
+
+    def _insert_test_data(self, dataset_size):
+        self.postgres_connector.open_connection()
+        features = FEATURES_SERIALIZED
+        neighbors = NEIGHBORS_SERIALIZED
+        labels = LABELS_SERIALIZED
+        for index in range(dataset_size):
+            self.postgres_connector.execute_insert_dataset(str(index), features, neighbors, labels)
+        self.postgres_connector.close_connection()
+
+    def _truncate_table(self) -> None:
+        self.postgres_connector.open_connection()
+        self.postgres_connector.truncate_table(TEST_DATASET)
+        self.postgres_connector.close_connection()
+

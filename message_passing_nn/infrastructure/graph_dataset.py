@@ -1,5 +1,3 @@
-import os
-import pickle
 from typing import List, Tuple
 
 import torch as to
@@ -11,9 +9,9 @@ from message_passing_nn.utils.postgres_connector import PostgresConnector
 
 
 class GraphDataset(Dataset):
-    def __init__(self, postgres_connector: PostgresConnector) -> None:
+    def __init__(self, postgres_connector: PostgresConnector = None) -> None:
         self.postgres_connector = postgres_connector
-        self.dataset = self._load_data()
+        self.dataset = self._load_data() if self.postgres_connector else []
 
     def __len__(self) -> int:
         return len(self.dataset)

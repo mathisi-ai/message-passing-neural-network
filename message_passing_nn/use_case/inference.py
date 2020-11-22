@@ -6,7 +6,7 @@ from message_passing_nn.data import DataPreprocessor
 from message_passing_nn.infrastructure.graph_dataset import GraphDataset
 from message_passing_nn.model.inferencer import Inferencer
 from message_passing_nn.model.loader import Loader
-from message_passing_nn.usecase import UseCase
+from message_passing_nn.use_case import UseCase
 from message_passing_nn.utils import Saver
 from message_passing_nn.utils.logger import get_logger
 
