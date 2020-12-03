@@ -39,9 +39,9 @@ class UseCaseFactory:
 
     def _create_grid_search(self) -> GridSearch:
         data_preprocessor = DataPreprocessor()
-        model_trainer = Trainer(data_preprocessor, os.environ['DEVICE'])
         postgres_connector = PostgresConnector()
         dataset = GraphDataset(postgres_connector)
+        model_trainer = Trainer(data_preprocessor, os.environ['DEVICE'], postgres_connector)
         saver = Saver(os.environ['MODEL_DIRECTORY'], os.environ['RESULTS_DIRECTORY'])
         return GridSearch(dataset, data_preprocessor, model_trainer, self.grid_search_dictionary, saver)
 

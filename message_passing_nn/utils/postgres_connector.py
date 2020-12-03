@@ -4,7 +4,8 @@ import psycopg2
 
 class PostgresConnector:
     def __init__(self):
-        self._table = os.environ['TABLE']
+        self.penalty_table = os.environ['PENALTY_TABLE']
+        self.dataset_table = os.environ['DATASET_TABLE']
         self._connection = None
         self._cursor = None
 
@@ -16,8 +17,12 @@ class PostgresConnector:
                                             port=os.environ["POSTGRES_PORT"])
         self._cursor = self._connection.cursor()
 
-    def execute_query(self, fields: list, where: str = None, order_by: list = None, limit: int = None):
-        sql = """select {} from {} """.format(",".join(fields), self._table)
+    def execute_query(self, fields: list, where: str = None, order_by: list = None, limit: int = None, use_case: str = None):
+        if use_case == 'penalty':
+            table = self.penalty_table
+        elif use_case == 'dataset':
+            table = self.dataset_table
+        sql = """select {} from {} """.format(",".join(fields), table)
         if where:
             sql += """where {} """.format(where)
         if order_by:
@@ -29,7 +34,7 @@ class PostgresConnector:
         return self._cursor.fetchall()
 
     def execute_insert_dataset(self, pdb_code, features, neighbors, labels):
-        sql = """insert into {} (pdb_code, features, neighbors, labels) """.format(self._table)
+        sql = """insert into {} (pdb_code, features, neighbors, labels) """.format(self.table)
         sql += """values ('{}', '{}', '{}', '{}') """.format(pdb_code, features, neighbors, labels)
         sql += """on conflict do nothing;"""
         self._cursor.execute(sql)
