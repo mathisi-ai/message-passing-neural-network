@@ -1,6 +1,10 @@
 import os
 from unittest import TestCase
 
+from typing import List, Tuple
+
+import itertools
+
 from message_passing_nn.data.data_preprocessor import DataPreprocessor
 from message_passing_nn.infrastructure.file_system_repository import FileSystemRepository
 from message_passing_nn.infrastructure.graph_dataset import GraphDataset
@@ -41,18 +45,19 @@ class TestTraining(TestCase):
             "batch_size": [3],
             "validation_split": [0.2],
             "test_split": [0.1],
-            "loss_function": ["MSE"],
+            "loss_function": ["MSEPenalty"],
             "optimizer": ["SGD"],
             "time_steps": [1],
             "validation_period": [5]
         }
         self._insert_test_data(dataset_size)
         dataset = GraphDataset(self.postgres_connector)
+        grid_search_configurations = self._get_all_grid_search_configurations(grid_search_dictionary)
 
         grid_search = GridSearch(dataset,
                                  self.data_preprocessor,
                                  self.model_trainer,
-                                 grid_search_dictionary,
+                                 grid_search_configurations,
                                  self.saver)
 
         # When
@@ -77,18 +82,19 @@ class TestTraining(TestCase):
             "batch_size": [3],
             "validation_split": [0.2],
             "test_split": [0.1],
-            "loss_function": ["MSE"],
+            "loss_function": ["MSEPenalty"],
             "optimizer": ["SGD"],
             "time_steps": [1],
             "validation_period": [5]
         }
         self._insert_test_data(dataset_size)
         dataset = GraphDataset(self.postgres_connector)
+        grid_search_configurations = self._get_all_grid_search_configurations(grid_search_dictionary)
 
         grid_search = GridSearch(dataset,
                                  self.data_preprocessor,
                                  self.model_trainer,
-                                 grid_search_dictionary,
+                                 grid_search_configurations,
                                  self.saver)
 
         # When
@@ -120,11 +126,12 @@ class TestTraining(TestCase):
         }
         self._insert_test_data(dataset_size)
         dataset = GraphDataset(self.postgres_connector)
+        grid_search_configurations = self._get_all_grid_search_configurations(grid_search_dictionary)
 
         grid_search = GridSearch(dataset,
                                  self.data_preprocessor,
                                  self.model_trainer,
-                                 grid_search_dictionary,
+                                 grid_search_configurations,
                                  self.saver)
 
         # When
@@ -153,3 +160,10 @@ class TestTraining(TestCase):
         self.postgres_connector.open_connection()
         self.postgres_connector.truncate_table(TEST_DATASET)
         self.postgres_connector.close_connection()
+
+    @staticmethod
+    def _get_all_grid_search_configurations(grid_search_parameters) -> List[Tuple[Tuple]]:
+        all_grid_search_configurations = []
+        for key in grid_search_parameters.keys():
+            all_grid_search_configurations.append([(key, value) for value in grid_search_parameters[key]])
+        return list(itertools.product(*all_grid_search_configurations))

@@ -17,74 +17,76 @@ class GridSearch(UseCase):
                  dataset: GraphDataset,
                  data_preprocessor: DataPreprocessor,
                  trainer: Trainer,
-                 grid_search_dictionary: Dict,
+                 grid_search_configurations: List[Tuple[Tuple]],
                  saver: Saver) -> None:
         self.dataset = dataset
         self.data_preprocessor = data_preprocessor
         self.trainer = trainer
-        self.grid_search_dictionary = grid_search_dictionary
+        self.grid_search_configurations = grid_search_configurations
         self.saver = saver
+        self.results = {'training_loss': {},
+                        'validation_loss': {},
+                        'test_loss': {}}
 
     def start(self) -> Dict:
-        all_grid_search_configurations = self._get_all_grid_search_configurations()
-        losses = {'training_loss': {},
-                  'validation_loss': {},
-                  'test_loss': {}}
+        get_logger().info('Started Grid Search')
         configuration_id = ''
-        for configuration in all_grid_search_configurations:
-            configuration_id, configuration_dictionary = self._get_configuration_dictionary(configuration)
-            losses = self._search_configuration(configuration_id, configuration_dictionary, losses)
-        self.saver.save_results(configuration_id, losses)
+        for configuration in self.grid_search_configurations:
+            configuration_dictionary, dataloaders = self._build_a_configuration(configuration)
+            self._train_validate_and_test_a_configuration(configuration_dictionary['configuration_id'],
+                                                          dataloaders,
+                                                          configuration_dictionary['epochs'],
+                                                          configuration_dictionary['validation_period'])
+        self.saver.save_results(self.results, configuration_id)
         get_logger().info('Finished Training')
-        return losses
+        return self.results
 
-    def _search_configuration(self, configuration_id: str, configuration_dictionary: Dict, losses: Dict) -> Dict:
-        training_data, validation_data, test_data, data_dimensions = self._prepare_dataset(configuration_dictionary)
-        self.trainer.instantiate_attributes(data_dimensions, configuration_dictionary)
-        losses = self._update_losses_with_configuration_id(configuration_dictionary, losses)
+    def _train_validate_and_test_a_configuration(self,
+                                                 configuration_id: str,
+                                                 dataloaders: Tuple[DataLoader, DataLoader, DataLoader],
+                                                 epochs: int,
+                                                 validation_period: int) -> None:
+        get_logger().info('Started training:', configuration_id)
+        training_data, validation_data, test_data = dataloaders
         validation_loss_max = np.inf
-        get_logger().info('Started Training')
-        for epoch in range(1, configuration_dictionary['epochs'] + 1):
+        for epoch in range(1, epochs + 1):
             training_loss = self.trainer.do_train(training_data, epoch)
-            losses['training_loss'][configuration_dictionary["configuration_id"]].update({epoch: training_loss})
-            if epoch % configuration_dictionary["validation_period"] == 0:
+            self.results['training_loss'][configuration_id].update({epoch: training_loss})
+            if epoch % validation_period == 0:
                 validation_loss = self.trainer.do_evaluate(validation_data, epoch)
-                losses['validation_loss'][configuration_dictionary["configuration_id"]].update(
-                    {epoch: validation_loss})
+                self.results['validation_loss'][configuration_id].update({epoch: validation_loss})
                 if validation_loss < validation_loss_max:
                     self.saver.save_model(epoch, configuration_id, self.trainer.model)
         test_loss = self.trainer.do_evaluate(test_data)
-        losses['test_loss'][configuration_dictionary["configuration_id"]].update({"final_epoch": test_loss})
-        return losses
+        self.results['test_loss'][configuration_id].update({'final_epoch': test_loss})
+        get_logger().info('Finished training:', configuration_id)
+
+    def _build_a_configuration(self, configuration: Tuple[Tuple]) -> Tuple[dict, Tuple[DataLoader, DataLoader, DataLoader]]:
+        configuration_dictionary = self._get_configuration_dictionary(configuration)
+        dataloaders, data_dimensions = self._prepare_dataset(configuration_dictionary)
+        self.trainer.instantiate_attributes(data_dimensions, configuration_dictionary)
+        self._update_losses_with_configuration_id(configuration_dictionary)
+        return configuration_dictionary, dataloaders
 
     @staticmethod
-    def _update_losses_with_configuration_id(configuration_dictionary: Dict, losses: Dict) -> Dict:
-        losses['training_loss'].update({configuration_dictionary["configuration_id"]: {}})
-        losses['validation_loss'].update({configuration_dictionary["configuration_id"]: {}})
-        losses['test_loss'].update({configuration_dictionary["configuration_id"]: {}})
-        return losses
-
-    @staticmethod
-    def _get_configuration_dictionary(configuration: Tuple[Tuple]) -> Tuple[str, Dict]:
+    def _get_configuration_dictionary(configuration: Tuple[Tuple]) -> dict:
         configuration_dictionary = dict(((key, value) for key, value in configuration))
         configuration_id = 'configuration&id'
         for key, value in configuration_dictionary.items():
-            configuration_id += "__" + "&".join([key, str(value)])
-        configuration_dictionary.update({"configuration_id": configuration_id})
-        return configuration_id, configuration_dictionary
+            configuration_id += '__' + '&'.join([key, str(value)])
+        configuration_dictionary.update({'configuration_id': configuration_id})
+        return configuration_dictionary
 
-    def _prepare_dataset(self, configuration_dictionary: Dict) -> Tuple[DataLoader, DataLoader, DataLoader, Tuple]:
-        get_logger().info("Calculating all neighbors for each node")
-        training_data, validation_data, test_data = self.data_preprocessor \
-            .train_validation_test_split(self.dataset,
-                                         configuration_dictionary['batch_size'],
-                                         configuration_dictionary['validation_split'],
-                                         configuration_dictionary['test_split'])
+    def _prepare_dataset(self, configuration_dictionary: Dict) -> Tuple[Tuple[DataLoader, DataLoader, DataLoader], Tuple]:
+        get_logger().info('Calculating all neighbors for each node')
+        dataloaders = self.data_preprocessor.train_validation_test_split(self.dataset,
+                                                                         configuration_dictionary['batch_size'],
+                                                                         configuration_dictionary['validation_split'],
+                                                                         configuration_dictionary['test_split'])
         data_dimensions = self.data_preprocessor.extract_data_dimensions(self.dataset)
-        return training_data, validation_data, test_data, data_dimensions
+        return dataloaders, data_dimensions
 
-    def _get_all_grid_search_configurations(self) -> List[Tuple[Tuple]]:
-        all_grid_search_configurations = []
-        for key in self.grid_search_dictionary.keys():
-            all_grid_search_configurations.append([(key, value) for value in self.grid_search_dictionary[key]])
-        return list(itertools.product(*all_grid_search_configurations))
+    def _update_losses_with_configuration_id(self, configuration_dictionary: Dict) -> None:
+        self.results['training_loss'].update({configuration_dictionary['configuration_id']: {}})
+        self.results['validation_loss'].update({configuration_dictionary['configuration_id']: {}})
+        self.results['test_loss'].update({configuration_dictionary['configuration_id']: {}})

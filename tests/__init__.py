@@ -3,7 +3,8 @@ import os
 from tests.fixtures.postgres_variables import *
 from message_passing_nn.utils.postgres_connector import PostgresConnector
 
-os.environ['TABLE'] = TEST_DATASET
+os.environ['DATASET_TABLE'] = TEST_DATASET
+os.environ['PENALTY_TABLE'] = TEST_PENALTY
 os.environ["DATABASE"] = PDB_TEST
 os.environ["POSTGRES_USERNAME"] = POSTGRES
 os.environ["POSTGRES_PASSWORD"] = POSTGRES

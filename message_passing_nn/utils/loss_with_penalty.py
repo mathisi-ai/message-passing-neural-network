@@ -10,7 +10,7 @@ class LossWithPenalty:
         self.penalty_decimals = penalty_decimals
         self.batch_size = batch_size
 
-    def calculate_loss(self, features, labels, outputs):
+    def __call__(self, labels, outputs, features):
         loss_step_1 = self.loss_function(outputs, labels)
         loss_step_2 = to.zeros_like(loss_step_1)
         if self.penalty:

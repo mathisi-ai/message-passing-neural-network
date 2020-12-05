@@ -1,7 +1,9 @@
 import logging
+import os
 
 import click
 
+from message_passing_nn.infrastructure.file_system_repository import FileSystemRepository
 from message_passing_nn.use_case_factory import UseCaseFactory
 from message_passing_nn.utils.logger import setup_logging, get_logger
 
@@ -17,8 +19,9 @@ def main(debug):
 @click.argument("parameters_path", envvar='PARAMETERS_PATH')
 def start_training(parameters_path: str) -> None:
     get_logger().info("Starting grid search")
-    use_case = UseCaseFactory(parameters_path)
-    grid_search = use_case.build("grid-search")
+    grid_search_parameters = init_environment_variables(parameters_path)
+    use_case = UseCaseFactory()
+    grid_search = use_case.build(use_case_name="grid-search", grid_search_parameters=grid_search_parameters)
     grid_search.start()
 
 
@@ -26,9 +29,23 @@ def start_training(parameters_path: str) -> None:
 @click.argument("parameters_path", envvar='PARAMETERS_PATH')
 def start_inference(parameters_path: str) -> None:
     get_logger().info("Starting inference")
-    use_case = UseCaseFactory(parameters_path)
-    inference = use_case.build("inference")
+    init_environment_variables(parameters_path)
+    use_case = UseCaseFactory()
+    inference = use_case.build(use_case_name="inference")
     inference.start()
+
+
+def init_environment_variables(parameters_path):
+    grid_search_dictionary = {}
+    parameters = FileSystemRepository.load_json(parameters_path)
+    for key, value in parameters.items():
+        if isinstance(value, str):
+            os.environ[key] = value
+        elif isinstance(value, list):
+            grid_search_dictionary.update({key.lower(): value})
+        else:
+            raise RuntimeError("Incorrect parameter type. Please use only str and list types!")
+    return grid_search_dictionary
 
 
 main.add_command(start_training)

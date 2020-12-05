@@ -25,7 +25,7 @@ class Saver:
         to.save(model.state_dict(), path_and_filename)
         get_logger().info("Saved model checkpoint in " + path_and_filename)
 
-    def save_results(self, configuration_id: str, results: Dict) -> None:
+    def save_results(self, results: Dict, configuration_id: str = '') -> None:
         current_folder = self._join_path([self.results_directory, configuration_id])
         if not os.path.exists(current_folder):
             os.makedirs(current_folder)

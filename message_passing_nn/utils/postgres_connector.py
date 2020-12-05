@@ -17,10 +17,15 @@ class PostgresConnector:
                                             port=os.environ["POSTGRES_PORT"])
         self._cursor = self._connection.cursor()
 
-    def execute_query(self, fields: list, where: str = None, order_by: list = None, limit: int = None, use_case: str = None):
+    def execute_query(self,
+                      fields: list,
+                      where: str = None,
+                      order_by: list = None,
+                      limit: int = None,
+                      use_case: str = None):
         if use_case == 'penalty':
             table = self.penalty_table
-        elif use_case == 'dataset':
+        else:
             table = self.dataset_table
         sql = """select {} from {} """.format(",".join(fields), table)
         if where:
@@ -34,7 +39,7 @@ class PostgresConnector:
         return self._cursor.fetchall()
 
     def execute_insert_dataset(self, pdb_code, features, neighbors, labels):
-        sql = """insert into {} (pdb_code, features, neighbors, labels) """.format(self.table)
+        sql = """insert into {} (pdb_code, features, neighbors, labels) """.format(self.dataset_table)
         sql += """values ('{}', '{}', '{}', '{}') """.format(pdb_code, features, neighbors, labels)
         sql += """on conflict do nothing;"""
         self._cursor.execute(sql)

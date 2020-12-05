@@ -11,7 +11,7 @@
   "DEVICE": "cpu",
   "MODEL": ["RNN"],
   "EPOCHS": [10],
-  "LOSS_FUNCTION": ["MSE"],
+  "LOSS_FUNCTION": ["MSEPenalty"],
   "SCALING_FACTOR": [0.1],
   "PENALTY_DECIMALS": [2],
   "OPTIMIZER": ["Adagrad"],

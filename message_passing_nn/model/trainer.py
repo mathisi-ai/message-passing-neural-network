@@ -5,11 +5,10 @@ import torch as to
 from torch.optim.optimizer import Optimizer
 from torch.utils.data.dataloader import DataLoader
 
-from message_passing_nn.fixtures.amino_acid_maps import map_amino_acid_codes, amino_acid_to_index
 from message_passing_nn.data.preprocessor import Preprocessor
 from message_passing_nn.utils.logger import get_logger
 from message_passing_nn.utils.loss_function_selector import LossFunctionSelector
-from message_passing_nn.utils.loss_with_penalty import LossWithPenalty
+from message_passing_nn.utils.loss_function_wrapper import LossFunctionWrapper
 from message_passing_nn.utils.model_selector import ModelSelector
 from message_passing_nn.utils.optimizer_selector import OptimizerSelector
 from message_passing_nn.utils.postgres_connector import PostgresConnector
@@ -20,6 +19,7 @@ class Trainer:
         self.preprocessor = preprocessor
         self.device = device
         self.postgres_connector = postgres_connector
+        self.penalty = True if self.postgres_connector else False
         self.model = None
         self.loss_function = None
         self.optimizer = None
@@ -39,8 +39,7 @@ class Trainer:
         get_logger().info('Loaded the ' + configuration_dictionary['model'] +
                           ' model. Model weights size: ' + self.model.get_model_size() + ' MB')
         self.model.to(self.device)
-        penalty = True if self.postgres_connector else False
-        self.loss_function = self._instantiate_the_loss_function(configuration_dictionary, penalty=penalty)
+        self.loss_function = self._instantiate_the_loss_function(configuration_dictionary)
         get_logger().info('Loss function: ' + configuration_dictionary['loss_function'])
         self.optimizer = self._instantiate_the_optimizer(
             OptimizerSelector.load_optimizer(configuration_dictionary['optimizer']))
@@ -59,7 +58,7 @@ class Trainer:
         current_batch_size = self._get_current_batch_size(labels)
         self.optimizer.zero_grad()
         outputs = self.model(node_features, all_neighbors, batch_size=current_batch_size)
-        loss = self.loss_function.calculate_loss(node_features, outputs, labels)
+        loss = self.loss_function(outputs, labels, node_features)
         self._do_backpropagate(loss)
         return loss.item()
 
@@ -73,7 +72,7 @@ class Trainer:
                                                                        labels_validation.to(self.device))
                     current_batch_size = self._get_current_batch_size(labels_validation)
                     outputs = self.model(node_features, all_neighbors, current_batch_size)
-                    loss = self.loss_function.calculate_loss(node_features, outputs, labels_validation)
+                    loss = self.loss_function(outputs, labels_validation, node_features)
                     evaluation_loss.append(float(loss))
                 evaluation_loss = np.average(evaluation_loss)
                 if epoch is not None:
@@ -88,23 +87,9 @@ class Trainer:
         loss.backward()
         self.optimizer.step()
 
-    def _instantiate_the_loss_function(self, configuration_dictionary: dict, penalty: bool = False):
-        if penalty:
-            penalty_dictionary = {}
-            self.postgres_connector.open_connection()
-            penalty = self.postgres_connector.execute_query(fields=["residue", "penalty"],
-                                                            use_case='penalty')
-            self.postgres_connector.close_connection()
-            for residue, penalty in penalty:
-                residue_index = amino_acid_to_index[map_amino_acid_codes[residue]]
-                penalty_dictionary.update({residue_index: np.array(penalty)})
-            return LossWithPenalty(LossFunctionSelector.load_loss_function(configuration_dictionary['loss_function'])(),
-                                   penalty=penalty_dictionary,
-                                   scaling_factor=configuration_dictionary['scaling_factor'],
-                                   penalty_decimals=configuration_dictionary['penalty_decimals'],
-                                   batch_size=configuration_dictionary['batch_size'])
-        else:
-            return LossFunctionSelector.load_loss_function(configuration_dictionary['loss_function'])
+    def _instantiate_the_loss_function(self, configuration: dict):
+        loss_function, penalty = LossFunctionSelector.load_loss_function(configuration, self.postgres_connector)
+        return LossFunctionWrapper(loss_function, penalty)
 
     def _instantiate_the_optimizer(self, optimizer: Any) -> Optimizer:
         model_parameters = list(self.model.parameters())
