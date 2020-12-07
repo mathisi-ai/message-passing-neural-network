@@ -17,24 +17,13 @@ class PostgresConnector:
                                             port=os.environ["POSTGRES_PORT"])
         self._cursor = self._connection.cursor()
 
-    def execute_query(self,
-                      fields: list,
-                      where: str = None,
-                      order_by: list = None,
-                      limit: int = None,
-                      use_case: str = None):
-        if use_case == 'penalty':
-            table = self.penalty_table
-        else:
-            table = self.dataset_table
-        sql = """select {} from {} """.format(",".join(fields), table)
-        if where:
-            sql += """where {} """.format(where)
-        if order_by:
-            sql += """order by {}""".format(",".join(order_by))
-        if limit:
-            sql += """limit {}""".format(str(limit))
-        sql += """;"""
+    def query_dataset(self):
+        sql = """select features, neighbors, labels, pdb_code from {};""".format(self.dataset_table)
+        self._cursor.execute(sql)
+        return self._cursor.fetchall()
+
+    def query_penalty(self):
+        sql = """select residue, penalty from {};""".format(self.penalty_table)
         self._cursor.execute(sql)
         return self._cursor.fetchall()
 

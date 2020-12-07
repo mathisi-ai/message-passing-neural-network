@@ -25,8 +25,7 @@ class GraphDataset(Dataset):
     def _load_data(self) -> List[Tuple[to.Tensor, to.Tensor, to.Tensor, str]]:
         get_logger().info("Loading dataset")
         self.postgres_connector.open_connection()
-        dataset = self.postgres_connector.execute_query(fields=["features", "neighbors", "labels", "pdb_code"],
-                                                        use_case='dataset')
+        dataset = self.postgres_connector.query_dataset()
         self.postgres_connector.close_connection()
         get_logger().info("Loaded {} entries. Size: {} MB".format(len(dataset), self._get_size_in_memory(dataset)))
         return dataset

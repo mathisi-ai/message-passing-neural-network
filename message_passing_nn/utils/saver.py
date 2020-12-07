@@ -33,7 +33,7 @@ class Saver:
         results_dataframe.to_csv(path_and_filename)
         get_logger().info("Saved results in " + path_and_filename)
 
-    def save_distance_maps(self, configuration_id: str, distance_maps: List[Tuple]):
+    def save_distance_maps(self, distance_maps: List[Tuple], configuration_id: str = ''):
         current_folder = os.path.join(self.results_directory, configuration_id)
         if not os.path.exists(current_folder):
             os.makedirs(current_folder)

@@ -19,28 +19,25 @@ class DataPreprocessor:
         test_index, validation_index = self._get_validation_and_test_indexes(dataset, validation_split, test_split)
 
         training_data = self._get_train_split(batch_size, dataset, validation_index)
+        validation_data = self._get_validation_split(batch_size, dataset, validation_index, test_index)
+        test_data = self._get_test_split(batch_size, dataset, test_index)
 
-        validation_data = self._get_validation_split(batch_size, dataset, test_index, validation_index, validation_split)
-
-        test_data = self._get_test_split(batch_size, dataset, test_index, test_split)
-
-        get_logger().info("Train/validation/test split: {} batches of {}".format("/".join([str(len(training_data)),
-                                                                                           str(len(validation_data)),
-                                                                                           str(len(test_data))]),
-                                                                                 str(batch_size)))
+        get_logger().info("Train/validation/test split: {}/{}/{} batches of {}".format(len(training_data),
+                                                                                       len(validation_data),
+                                                                                       len(test_data),
+                                                                                       batch_size))
         return training_data, validation_data, test_data
+
+    @staticmethod
+    def extract_data_dimensions(dataset: GraphDataset) -> dict:
+        return {"number_of_nodes": int(dataset[0][0].shape[0]),
+                "number_of_node_features": int(dataset[0][0].shape[1]),
+                "fully_connected_layer_input_size": int(dataset[0][0].shape[0] * dataset[0][0].shape[1]),
+                "fully_connected_layer_output_size": int(dataset[0][2].shape[0])}
 
     @staticmethod
     def get_dataloader(dataset: GraphDataset, batch_size: int = 1) -> DataLoader:
         return DataLoader(dataset, batch_size)
-
-    @staticmethod
-    def extract_data_dimensions(dataset: GraphDataset) -> dict:
-        data_dimensions = {"number_of_nodes": int(dataset[0][0].shape[0]),
-                           "number_of_node_features": int(dataset[0][0].shape[1]),
-                           "fully_connected_layer_input_size": int(dataset[0][0].shape[0] * dataset[0][0].shape[1]),
-                           "fully_connected_layer_output_size": int(dataset[0][2].shape[0])}
-        return data_dimensions
 
     @staticmethod
     def _get_train_split(batch_size: int, dataset: GraphDataset, validation_index: int) -> DataLoader:
@@ -49,12 +46,9 @@ class DataPreprocessor:
         return training_data
 
     @staticmethod
-    def _get_validation_split(batch_size: int,
-                              dataset: GraphDataset,
-                              test_index: int,
-                              validation_index: int,
-                              validation_split: float) -> DataLoader:
-        if validation_split:
+    def _get_validation_split(batch_size: int, dataset: GraphDataset, validation_index: int, test_index: int) \
+            -> DataLoader:
+        if validation_index:
             validation_sampler = SubsetRandomSampler(list(range(validation_index, test_index)))
             validation_data = DataLoader(dataset, batch_size=batch_size, sampler=validation_sampler)
         else:
@@ -62,8 +56,8 @@ class DataPreprocessor:
         return validation_data
 
     @staticmethod
-    def _get_test_split(batch_size: int, dataset: GraphDataset, test_index: int, test_split: float) -> DataLoader:
-        if test_split:
+    def _get_test_split(batch_size: int, dataset: GraphDataset, test_index: int) -> DataLoader:
+        if test_index:
             test_sampler = SubsetRandomSampler(list(range(test_index, len(dataset.dataset))))
             test_data = DataLoader(dataset, batch_size=batch_size, sampler=test_sampler)
         else:
@@ -74,6 +68,6 @@ class DataPreprocessor:
     def _get_validation_and_test_indexes(dataset: GraphDataset,
                                          validation_split: float,
                                          test_split: float) -> Tuple[int, int]:
-        validation_index = int((1 - validation_split - test_split) * len(dataset))
-        test_index = int((1 - test_split) * len(dataset))
+        validation_index = int((1 - validation_split - test_split) * len(dataset)) if validation_split else None
+        test_index = int((1 - test_split) * len(dataset)) if test_split else None
         return test_index, validation_index

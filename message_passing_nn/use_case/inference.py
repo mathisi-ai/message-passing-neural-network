@@ -25,12 +25,11 @@ class Inference(UseCase):
         self.saver = saver
 
     def start(self) -> None:
-        get_logger().info('Started Inference')
-        configuration_id = ''
+        get_logger().info('Starting Inference')
         inference_dataset, data_dimensions = self._prepare_dataset()
         model = self.loader.load_model(data_dimensions, self.saver.model_directory)
         outputs_labels_pairs = self.inferencer.do_inference(model, inference_dataset)
-        self.saver.save_distance_maps(configuration_id, outputs_labels_pairs)
+        self.saver.save_distance_maps(outputs_labels_pairs)
         get_logger().info('Finished Inference')
 
     def _prepare_dataset(self) -> Tuple[DataLoader, dict]:

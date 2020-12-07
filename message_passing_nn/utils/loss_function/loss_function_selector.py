@@ -26,7 +26,7 @@ def load_loss_function(configuration: dict, postgres_connector: PostgresConnecto
 def build_penalty_loss(postgres_connector: PostgresConnector):
     penalty_dictionary = {}
     postgres_connector.open_connection()
-    penalty = postgres_connector.execute_query(fields=["residue", "penalty"], use_case='penalty')
+    penalty = postgres_connector.query_penalty()
     postgres_connector.close_connection()
     for residue, penalty in penalty:
         residue_index = amino_acid_to_index[map_amino_acid_codes[residue]]
