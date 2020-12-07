@@ -6,12 +6,11 @@ from torch.utils.data.dataloader import DataLoader
 from message_passing_nn.data.data_preprocessor import DataPreprocessor
 from message_passing_nn.infrastructure.graph_dataset import GraphDataset
 from message_passing_nn.model.trainer import Trainer
-from message_passing_nn.use_case import UseCase
 from message_passing_nn.utils.logger import get_logger
 from message_passing_nn.utils.saver import Saver
 
 
-class GridSearch(UseCase):
+class GridSearch:
     def __init__(self,
                  dataset: GraphDataset,
                  data_preprocessor: DataPreprocessor,
