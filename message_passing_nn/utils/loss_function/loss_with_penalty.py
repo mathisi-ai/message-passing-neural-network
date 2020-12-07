@@ -50,7 +50,7 @@ class LossWithPenalty:
             counter += 1
             return node_penalty, counter
         else:
-            return to.tensor([0.0]), counter
+            return to.tensor(0.0), counter
 
     def _calculate_node_penalty(self, node_labels: to.Tensor, one_hot_residue: to.Tensor) -> to.Tensor:
         penalty_index = self._get_residue_index(one_hot_residue)
