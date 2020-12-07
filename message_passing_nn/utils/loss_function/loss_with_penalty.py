@@ -1,5 +1,4 @@
 import torch as to
-from torch.nn import MSELoss
 
 
 class LossWithPenalty:
@@ -10,7 +9,7 @@ class LossWithPenalty:
         self.penalty_decimals = penalty_decimals
         self.batch_size = batch_size
 
-    def __call__(self, labels, outputs, features):
+    def forward(self, outputs, labels, features):
         loss_step_1 = self.loss_function(outputs, labels)
         loss_step_2 = to.zeros_like(loss_step_1)
         if self.penalty:
@@ -31,6 +30,8 @@ class LossWithPenalty:
                                         self._get_index_from(labels_reshaped[node_id][1]))
                 counter += 1
                 return to.add(loss_step_2, self.scaling_factor * self.penalty[penalty_index][index_psi, index_phi]), counter
+            else:
+                return 0.0, counter
         else:
             return 0.0, counter
 

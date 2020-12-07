@@ -40,7 +40,7 @@ def init_environment_variables(parameters_path):
     parameters = FileSystemRepository.load_json(parameters_path)
     for key, value in parameters.items():
         if isinstance(value, str):
-            os.environ[key] = value
+            os.environ[key.upper()] = value
         elif isinstance(value, list):
             grid_search_dictionary.update({key.lower(): value})
         else:

@@ -1,6 +1,6 @@
 import os
 
-from tests.fixtures.postgres_variables import *
+from tests.fixtures.environment_variables import *
 
 os.environ['TABLE'] = TEST_DATASET
 os.environ["DATABASE"] = PDB_TEST

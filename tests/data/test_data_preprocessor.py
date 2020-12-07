@@ -4,7 +4,7 @@ import torch as to
 from message_passing_nn.infrastructure.graph_dataset import GraphDataset
 
 from message_passing_nn.data.data_preprocessor import DataPreprocessor
-from tests.fixtures.postgres_variables import TEST_DATASET
+from tests.fixtures.environment_variables import TEST_DATASET
 from tests.fixtures.matrices_and_vectors import BASE_GRAPH, BASE_GRAPH_NODE_FEATURES, FEATURES_SERIALIZED, \
     NEIGHBORS_SERIALIZED, LABELS_SERIALIZED
 from message_passing_nn.utils.postgres_connector import PostgresConnector
@@ -36,7 +36,10 @@ class TestGraphPreprocessor(TestCase):
         # Given
         self._insert_test_data(dataset_size=1)
         dataset = GraphDataset(self.postgres_connector)
-        data_dimensions_expected = (to.Size([4, 4]), to.Size([7]))
+        data_dimensions_expected = {"number_of_nodes": 4,
+                                    "number_of_node_features": 4,
+                                    "fully_connected_layer_input_size": 16,
+                                    "fully_connected_layer_output_size": 8}
 
         # When
         data_dimensions = self.data_preprocessor.extract_data_dimensions(dataset)
@@ -44,32 +47,6 @@ class TestGraphPreprocessor(TestCase):
         # Then
         self.assertEqual(data_dimensions_expected, data_dimensions)
         self._truncate_table()
-
-    def test_flatten_when_sizes_match(self):
-        # Given
-        dataset_length = 2
-        labels = BASE_GRAPH.view(-1)
-        tensors = to.cat((labels, labels))
-        tensors_flattened_expected = tensors.view(-1)
-
-        # When
-        tensors_flattened = self.data_preprocessor.flatten(tensors, desired_size=dataset_length * len(labels))
-
-        # Then
-        self.assertTrue(to.allclose(tensors_flattened_expected, tensors_flattened))
-
-    def test_flatten_when_sizes_do_not_match(self):
-        # Given
-        dataset_length = 3
-        labels = BASE_GRAPH.view(-1)
-        tensors = to.cat((labels, labels))
-        tensors_flattened_expected = to.cat((tensors.view(-1), to.zeros_like(labels)))
-
-        # When
-        tensors_flattened = self.data_preprocessor.flatten(tensors, desired_size=dataset_length * len(labels))
-
-        # Then
-        self.assertTrue(to.allclose(tensors_flattened_expected, tensors_flattened))
 
     def _insert_test_data(self, dataset_size):
         self.postgres_connector.open_connection()

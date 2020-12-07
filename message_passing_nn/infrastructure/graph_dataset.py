@@ -27,14 +27,9 @@ class GraphDataset(Dataset):
         self.postgres_connector.open_connection()
         dataset = self.postgres_connector.execute_query(fields=["features", "neighbors", "labels", "pdb_code"],
                                                         use_case='dataset')
-        dataset_on_memory_in_mb = str(self._get_size_in_memory(dataset))
-        get_logger().info("Loaded " + str(len(dataset)) + " entries. Size: " + dataset_on_memory_in_mb + " MB")
         self.postgres_connector.close_connection()
+        get_logger().info("Loaded {} entries. Size: {} MB".format(len(dataset), self._get_size_in_memory(dataset)))
         return dataset
-
-    @staticmethod
-    def _to_list(dataset: List[Tuple[to.Tensor, to.Tensor, to.Tensor]]) -> List[Tuple[to.Tensor, to.Tensor]]:
-        return [(dataset[index][0], dataset[index][1]) for index in range(len(dataset))]
 
     @staticmethod
     def _get_size_in_memory(dataset: Tuple[to.Tensor, to.Tensor, to.Tensor, str]) -> int:

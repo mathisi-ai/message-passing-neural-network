@@ -1,6 +1,6 @@
 import os
 
-from tests.fixtures.postgres_variables import *
+from tests.fixtures.environment_variables import *
 from message_passing_nn.utils.postgres_connector import PostgresConnector
 
 os.environ['DATASET_TABLE'] = TEST_DATASET

@@ -1,7 +1,6 @@
 import os
-from unittest import TestCase
-
 from typing import List, Tuple
+from unittest import TestCase
 
 import itertools
 
@@ -12,9 +11,9 @@ from message_passing_nn.model.trainer import Trainer
 from message_passing_nn.use_case.grid_search import GridSearch
 from message_passing_nn.utils.postgres_connector import PostgresConnector
 from message_passing_nn.utils.saver import Saver
-from tests.fixtures.matrices_and_vectors import BASE_GRAPH, BASE_GRAPH_NODE_FEATURES, FEATURES_SERIALIZED, \
-    NEIGHBORS_SERIALIZED, LABELS_SERIALIZED
-from tests.fixtures.postgres_variables import *
+from tests.fixtures.matrices_and_vectors import *
+from tests.fixtures.environment_variables import *
+from tests.fixtures.residue_list import map_amino_acid_codes
 
 
 class TestTraining(TestCase):
@@ -30,10 +29,8 @@ class TestTraining(TestCase):
         self.data_path = os.path.join("./", self.tests_data_directory, self.dataset_name)
         self.repository = FileSystemRepository(self.tests_data_directory, self.dataset_name)
         self.data_preprocessor = DataPreprocessor()
-        self.data_preprocessor.enable_test_mode()
         self.postgres_connector = PostgresConnector()
-        self.postgres_connector.open_connection()
-        self.model_trainer = Trainer(self.data_preprocessor, device)
+        self.model_trainer = Trainer(self.data_preprocessor, device, self.postgres_connector)
         self.saver = Saver(tests_model_directory, tests_results_directory)
 
     def test_start_for_multiple_batches_of_the_same_size(self):
@@ -46,9 +43,11 @@ class TestTraining(TestCase):
             "validation_split": [0.2],
             "test_split": [0.1],
             "loss_function": ["MSEPenalty"],
-            "optimizer": ["SGD"],
+            "optimizer": ["Adagrad"],
             "time_steps": [1],
-            "validation_period": [5]
+            "validation_period": [5],
+            "scaling_factor": [0.1],
+            "penalty_decimals": [0]
         }
         self._insert_test_data(dataset_size)
         dataset = GraphDataset(self.postgres_connector)
@@ -82,10 +81,12 @@ class TestTraining(TestCase):
             "batch_size": [3],
             "validation_split": [0.2],
             "test_split": [0.1],
-            "loss_function": ["MSEPenalty"],
-            "optimizer": ["SGD"],
+            "loss_function": ["MSE"],
+            "optimizer": ["Adagrad"],
             "time_steps": [1],
-            "validation_period": [5]
+            "validation_period": [5],
+            "scaling_factor": [0.1],
+            "penalty_decimals": [0]
         }
         self._insert_test_data(dataset_size)
         dataset = GraphDataset(self.postgres_connector)
@@ -120,9 +121,11 @@ class TestTraining(TestCase):
             "validation_split": [0.2],
             "test_split": [0.1],
             "loss_function": ["MSE"],
-            "optimizer": ["SGD"],
+            "optimizer": ["Adagrad"],
             "time_steps": [1],
-            "validation_period": [5]
+            "validation_period": [5],
+            "scaling_factor": [0.1],
+            "penalty_decimals": [0]
         }
         self._insert_test_data(dataset_size)
         dataset = GraphDataset(self.postgres_connector)
@@ -149,11 +152,18 @@ class TestTraining(TestCase):
 
     def _insert_test_data(self, dataset_size):
         self.postgres_connector.open_connection()
+        dataset_values = """(pdb_code varchar primary key, features float[][], neighbors float[][], labels float[])"""
+        penalty_values = """(residue varchar primary key, matrix float[][], penalty float[][])"""
+        self.postgres_connector.create_table(TEST_DATASET, dataset_values)
+        self.postgres_connector.create_table(TEST_PENALTY, penalty_values)
         features = FEATURES_SERIALIZED
         neighbors = NEIGHBORS_SERIALIZED
         labels = LABELS_SERIALIZED
+        penalty = PENALTY_SERIALIZED
         for index in range(dataset_size):
             self.postgres_connector.execute_insert_dataset(str(index), features, neighbors, labels)
+        for residue in map_amino_acid_codes:
+            self.postgres_connector.execute_insert_penalty(residue, penalty)
         self.postgres_connector.close_connection()
 
     def _truncate_table(self) -> None:

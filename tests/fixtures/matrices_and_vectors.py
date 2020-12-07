@@ -30,4 +30,5 @@ MULTIPLICATION_FACTOR = 0.1
 
 FEATURES_SERIALIZED = '{{0, 0, 1, 0}, {1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, 0}}'
 NEIGHBORS_SERIALIZED = '{{1, -1}, {0, 1}, {1, 3}, {2, -1}}'
-LABELS_SERIALIZED = '{0, 1, 0, 2, 1, 2, 0}'
+LABELS_SERIALIZED = '{0, 1, 0, 2, 1, 2, 0, 0}'
+PENALTY_SERIALIZED = '{{0, 0, 1}, {1, 1, 1}, {0, 1, 0}}'

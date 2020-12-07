@@ -19,8 +19,8 @@ from message_passing_nn.utils.saver import Saver
 class UseCaseFactory:
     def __init__(self) -> None:
         self.use_case = None
+        self.model = None
         self.device = os.environ['DEVICE']
-        self.model = os.environ['MODEL']
         self.model_directory = os.environ['MODEL_DIRECTORY']
         self.results_directory = os.environ['RESULTS_DIRECTORY']
 
@@ -49,6 +49,7 @@ class UseCaseFactory:
         return GridSearch(dataset, data_preprocessor, model_trainer, grid_search_configurations, saver)
 
     def _build_inference(self) -> Inference:
+        self.model = os.environ['MODEL']
         data_preprocessor = DataPreprocessor()
         model_loader = Loader(self.model)
         model_inferencer = Inferencer(data_preprocessor, self.device)

@@ -8,8 +8,9 @@ from message_passing_nn.model import Loader, Inferencer
 from message_passing_nn.use_case import Inference
 from message_passing_nn.utils.postgres_connector import PostgresConnector
 from message_passing_nn.utils.saver import Saver
-from tests.fixtures.postgres_variables import TEST_DATASET
-from tests.fixtures.matrices_and_vectors import FEATURES_SERIALIZED, NEIGHBORS_SERIALIZED, LABELS_SERIALIZED
+from tests.fixtures.environment_variables import *
+from tests.fixtures.matrices_and_vectors import *
+from tests.fixtures.residue_list import map_amino_acid_codes
 
 
 class TestInference(TestCase):
@@ -24,18 +25,13 @@ class TestInference(TestCase):
         tests_results_directory = os.path.join('tests', 'results_inference')
         device = "cpu"
         data_preprocessor = DataPreprocessor()
-        data_preprocessor.enable_test_mode()
         loader = Loader("RNN")
         inferencer = Inferencer(data_preprocessor, device)
         saver = Saver(tests_model_directory, tests_results_directory)
         self.postgres_connector = PostgresConnector()
         self._insert_test_data(dataset_size=1)
         dataset = GraphDataset(self.postgres_connector)
-        inference = Inference(dataset,
-                              data_preprocessor,
-                              loader,
-                              inferencer,
-                              saver)
+        inference = Inference(dataset, data_preprocessor, loader, inferencer, saver)
 
         # When
         inference.start()
@@ -49,11 +45,18 @@ class TestInference(TestCase):
 
     def _insert_test_data(self, dataset_size):
         self.postgres_connector.open_connection()
+        dataset_values = """(pdb_code varchar primary key, features float[][], neighbors float[][], labels float[])"""
+        penalty_values = """(residue varchar primary key, matrix float[][], penalty float[][])"""
+        self.postgres_connector.create_table(TEST_DATASET, dataset_values)
+        self.postgres_connector.create_table(TEST_PENALTY, penalty_values)
         features = FEATURES_SERIALIZED
         neighbors = NEIGHBORS_SERIALIZED
         labels = LABELS_SERIALIZED
+        penalty = PENALTY_SERIALIZED
         for index in range(dataset_size):
             self.postgres_connector.execute_insert_dataset(str(index), features, neighbors, labels)
+        for residue in map_amino_acid_codes:
+            self.postgres_connector.execute_insert_penalty(residue, penalty)
         self.postgres_connector.close_connection()
 
     def _truncate_table(self) -> None:

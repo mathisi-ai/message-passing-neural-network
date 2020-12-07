@@ -45,6 +45,13 @@ class PostgresConnector:
         self._cursor.execute(sql)
         self._connection.commit()
 
+    def execute_insert_penalty(self, residue, penalty):
+        sql = """insert into {} (residue, penalty) """.format(self.penalty_table)
+        sql += """values ('{}', '{}') """.format(residue, penalty)
+        sql += """on conflict do nothing;"""
+        self._cursor.execute(sql)
+        self._connection.commit()
+
     def create_table(self, table_name: str, fields: str):
         sql = """create table if not exists {} {};""".format(table_name, fields)
         self._cursor.execute(sql)
