@@ -41,7 +41,10 @@ class DataPreprocessor:
 
     @staticmethod
     def _get_train_split(batch_size: int, dataset: GraphDataset, validation_index: int) -> DataLoader:
-        train_sampler = SubsetRandomSampler(list(range(validation_index)))
+        if validation_index:
+            train_sampler = SubsetRandomSampler(list(range(validation_index)))
+        else:
+            train_sampler = SubsetRandomSampler(list(range(len(dataset))))
         training_data = DataLoader(dataset, batch_size=batch_size, sampler=train_sampler)
         return training_data
 
