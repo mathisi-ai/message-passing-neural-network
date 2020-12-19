@@ -1,0 +1,12 @@
+{
+  "POSTGRES_HOST": "localhost",
+  "POSTGRES_PORT": "5432",
+  "POSTGRES_USERNAME": "postgres",
+  "POSTGRES_PASSWORD": "postgres",
+  "DATABASE": "pdb_test",
+  "TABLE": "message_passing_tests",
+  "MODEL_DIRECTORY": "output/model_checkpoints/configuration&id__model&RNN__epochs&1000__loss_function&MSE__optimizer&Adagrad__batch_size&100__validation_split&0.2__test_split&0.1__time_steps&1__validation_period&5/Epoch_625_model_state_dictionary.pth",
+  "RESULTS_DIRECTORY": "output/results_inference",
+  "MODEL": "RNN",
+  "DEVICE": "cpu"
+}

@@ -1,9 +1,11 @@
 import logging
+import os
 
 import click
-import sys
 
-from message_passing_nn.create_message_passing_nn import create_grid_search, create_inference
+from message_passing_nn.infrastructure.file_system_repository import FileSystemRepository
+from message_passing_nn.use_case_factory import UseCaseFactory
+from message_passing_nn.utils.logger import setup_logging, get_logger
 
 
 @click.group("message-passing-nn")
@@ -14,95 +16,36 @@ def main(debug):
 
 
 @click.command('grid-search', help='Starts the grid search')
-@click.argument('dataset_name', envvar='DATASET_NAME', type=str)
-@click.argument('data_directory', envvar='DATA_DIRECTORY', type=str)
-@click.argument('model_directory', envvar='MODEL_DIRECTORY', type=str)
-@click.argument('results_directory', envvar='RESULTS_DIRECTORY', type=str)
-@click.argument('model', envvar='MODEL', type=str)
-@click.argument('device', envvar='DEVICE', type=str)
-@click.argument('epochs', envvar='EPOCHS', type=str)
-@click.argument('loss_function', envvar='LOSS_FUNCTION', type=str)
-@click.argument('optimizer', envvar='OPTIMIZER', type=str)
-@click.argument('batch_size', envvar='BATCH_SIZE', type=str)
-@click.argument('validation_split', envvar='VALIDATION_SPLIT', type=str)
-@click.argument('test_split', envvar='TEST_SPLIT', type=str)
-@click.argument('time_steps', envvar='TIME_STEPS', type=str)
-@click.argument('validation_period', envvar='VALIDATION_PERIOD', type=str)
-def start_training(dataset_name: str,
-                   data_directory: str,
-                   model_directory: str,
-                   results_directory: str,
-                   model: str,
-                   device: str,
-                   epochs: str,
-                   loss_function: str,
-                   optimizer: str,
-                   batch_size: str,
-                   validation_split: str,
-                   test_split: str,
-                   time_steps: str,
-                   validation_period: str) -> None:
-    message_passing_nn = create_grid_search(dataset_name,
-                                            data_directory,
-                                            model_directory,
-                                            results_directory,
-                                            model,
-                                            device,
-                                            epochs,
-                                            loss_function,
-                                            optimizer,
-                                            batch_size,
-                                            validation_split,
-                                            test_split,
-                                            time_steps,
-                                            validation_period)
-    message_passing_nn.start()
+@click.argument("parameters_path", envvar='PARAMETERS_PATH')
+def start_training(parameters_path: str) -> None:
+    get_logger().info("Starting grid search")
+    grid_search_parameters = init_environment_variables(parameters_path)
+    use_case = UseCaseFactory()
+    grid_search = use_case.build(use_case_name="grid-search", grid_search_parameters=grid_search_parameters)
+    grid_search.start()
 
 
 @click.command('inference', help='Starts the inference')
-@click.argument('dataset_name', envvar='DATASET_NAME', type=str)
-@click.argument('data_directory', envvar='DATA_DIRECTORY', type=str)
-@click.argument('model_directory', envvar='MODEL_DIRECTORY', type=str)
-@click.argument('results_directory', envvar='RESULTS_DIRECTORY', type=str)
-@click.argument('model', envvar='MODEL', type=str)
-@click.argument('device', envvar='DEVICE', type=str)
-def start_inference(dataset_name: str,
-                    data_directory: str,
-                    model_directory: str,
-                    results_directory: str,
-                    model: str,
-                    device: str) -> None:
+@click.argument("parameters_path", envvar='PARAMETERS_PATH')
+def start_inference(parameters_path: str) -> None:
     get_logger().info("Starting inference")
-    message_passing_nn = create_inference(dataset_name,
-                                          data_directory,
-                                          model_directory,
-                                          results_directory,
-                                          model,
-                                          device)
-    message_passing_nn.start()
+    init_environment_variables(parameters_path)
+    use_case = UseCaseFactory()
+    inference = use_case.build(use_case_name="inference")
+    inference.start()
 
 
-def setup_logging(log_level):
-    get_logger().setLevel(log_level)
-
-    logOutputFormatter = logging.Formatter(
-        '%(asctime)s %(levelname)s - %(message)s [%(filename)s:%(lineno)s] [%(relativeCreated)d]')
-
-    stdoutStreamHandler = logging.StreamHandler(sys.stdout)
-    stdoutStreamHandler.setLevel(log_level)
-    stdoutStreamHandler.setFormatter(logOutputFormatter)
-
-    get_logger().addHandler(stdoutStreamHandler)
-
-    stderrStreamHandler = logging.StreamHandler(sys.stdout)
-    stderrStreamHandler.setLevel(logging.WARNING)
-    stderrStreamHandler.setFormatter(logOutputFormatter)
-
-    get_logger().addHandler(stderrStreamHandler)
-
-
-def get_logger() -> logging.Logger:
-    return logging.getLogger('message_passing_nn')
+def init_environment_variables(parameters_path):
+    grid_search_dictionary = {}
+    parameters = FileSystemRepository.load_json(parameters_path)
+    for key, value in parameters.items():
+        if isinstance(value, str):
+            os.environ[key.upper()] = value
+        elif isinstance(value, list):
+            grid_search_dictionary.update({key.lower(): value})
+        else:
+            raise RuntimeError("Incorrect parameter type. Please use only str and list types!")
+    return grid_search_dictionary
 
 
 main.add_command(start_training)

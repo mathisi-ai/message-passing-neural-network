@@ -8,7 +8,10 @@ class TestLoader(TestCase):
     def test_load_model(self):
         # Given
         loader = Loader("RNN")
-        data_dimensions = ([4, 2], [16])
+        data_dimensions = {"number_of_nodes": 4,
+                           "number_of_node_features": 4,
+                           "fully_connected_layer_input_size": 16,
+                           "fully_connected_layer_output_size": 8}
         path_to_model = "tests/test_data/model-checkpoints-test/configuration&id__model&" + \
                         "RNN__epochs&10__loss_function&MSE__optimizer&Adagrad__batch_size&" + \
                         "100__validation_split&0.2__test_split&0.1__time_steps&1__validation_period&" + \

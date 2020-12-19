@@ -2,6 +2,7 @@ from torch import nn
 
 loss_functions = {
     "MSE": nn.MSELoss,
+    "MSEPenalty": nn.MSELoss,
     "L1": nn.L1Loss,
     "CrossEntropy": nn.CrossEntropyLoss,
     "CTC": nn.CTCLoss,

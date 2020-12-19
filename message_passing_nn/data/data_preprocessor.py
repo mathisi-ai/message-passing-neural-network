@@ -1,105 +1,76 @@
-import logging
-from typing import Tuple, List
+from typing import Tuple
 
-import torch as to
-from torch import nn
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
-from tqdm import tqdm
 
 from message_passing_nn.infrastructure.graph_dataset import GraphDataset
-from message_passing_nn.data.preprocessor import Preprocessor
+from message_passing_nn.utils.logger import get_logger
 
 
-class DataPreprocessor(Preprocessor):
+class DataPreprocessor:
     def __init__(self):
-        super().__init__()
-        self.test_mode = False
+        pass
 
     def train_validation_test_split(self,
                                     dataset: GraphDataset,
                                     batch_size: int,
                                     validation_split: float = 0.2,
                                     test_split: float = 0.1) -> Tuple[DataLoader, DataLoader, DataLoader]:
-        test_index, validation_index = self._get_validation_and_test_indexes(dataset,
-                                                                             validation_split,
-                                                                             test_split)
-        train_sampler = SubsetRandomSampler(list(range(validation_index)))
-        validation_sampler = SubsetRandomSampler(list(range(validation_index, test_index)))
-        test_sampler = SubsetRandomSampler(list(range(test_index, len(dataset.dataset))))
+        test_index, validation_index = self._get_validation_and_test_indexes(dataset, validation_split, test_split)
 
-        training_data = DataLoader(dataset, batch_size=batch_size, sampler=train_sampler)
-        if validation_split:
-            validation_data = DataLoader(dataset, batch_size=batch_size, sampler=validation_sampler)
-        else:
-            validation_data = DataLoader(GraphDataset([]))
-        if test_split:
-            test_data = DataLoader(dataset, batch_size=batch_size, sampler=test_sampler)
-        else:
-            test_data = DataLoader(GraphDataset([]))
-        self.get_logger().info("Train/validation/test split: " + "/".join([str(len(training_data)),
-                                                                           str(len(validation_data)),
-                                                                           str(len(test_data))])
-                               + " batches of " + str(batch_size))
+        training_data = self._get_train_split(batch_size, dataset, validation_index)
+        validation_data = self._get_validation_split(batch_size, dataset, validation_index, test_index)
+        test_data = self._get_test_split(batch_size, dataset, test_index)
+
+        get_logger().info("Train/validation/test split: {}/{}/{} batches of {}".format(len(training_data),
+                                                                                       len(validation_data),
+                                                                                       len(test_data),
+                                                                                       batch_size))
         return training_data, validation_data, test_data
+
+    @staticmethod
+    def extract_data_dimensions(dataset: GraphDataset) -> dict:
+        return {"number_of_nodes": int(dataset[0][0].shape[0]),
+                "number_of_node_features": int(dataset[0][0].shape[1]),
+                "fully_connected_layer_input_size": int(dataset[0][0].shape[0] * dataset[0][0].shape[1]),
+                "fully_connected_layer_output_size": int(dataset[0][2].shape[0])}
 
     @staticmethod
     def get_dataloader(dataset: GraphDataset, batch_size: int = 1) -> DataLoader:
         return DataLoader(dataset, batch_size)
 
-    def find_all_node_neighbors(self, dataset: List[Tuple[to.Tensor, to.Tensor, to.Tensor]]) -> List[
-        Tuple[to.Tensor, to.Tensor, to.Tensor]]:
-        dataset_with_neighbors = []
-        disable_progress_bar = self.test_mode
-        for index in tqdm(range(len(dataset)), disable=disable_progress_bar):
-            features, adjacency_matrix, labels = dataset[index]
-            number_of_nodes = features.shape[0]
-            all_neighbors = to.zeros(number_of_nodes, number_of_nodes) - to.ones(number_of_nodes, number_of_nodes)
-            all_neighbors_list = [to.nonzero(adjacency_matrix[node_id], as_tuple=True)[0].tolist() for node_id in
-                                  range(adjacency_matrix.shape[0])]
-            for node_id in range(number_of_nodes):
-                all_neighbors[node_id, :len(all_neighbors_list[node_id])] = to.tensor(all_neighbors_list[node_id])
-            dataset_with_neighbors.append((features, all_neighbors, labels))
-        return dataset_with_neighbors
-
     @staticmethod
-    def extract_data_dimensions(dataset: GraphDataset) -> Tuple:
-        node_features_size = dataset[0][0].size()
-        labels_size = dataset[0][2].size()
-        return node_features_size, labels_size
-
-    @staticmethod
-    def flatten(tensors: to.Tensor, desired_size: int = 0) -> to.Tensor:
-        flattened_tensor = tensors.view(-1)
-        if 0 < desired_size != len(flattened_tensor):
-            flattened_tensor = DataPreprocessor._pad_zeros(flattened_tensor, desired_size)
-        return flattened_tensor
-
-    @staticmethod
-    def normalize(tensor: to.Tensor, device: str) -> to.Tensor:
-        if tensor.size()[0] > 1:
-            normalizer = nn.BatchNorm1d(tensor.size()[1], affine=False).to(device)
-            return normalizer(tensor)
+    def _get_train_split(batch_size: int, dataset: GraphDataset, validation_index: int) -> DataLoader:
+        if validation_index:
+            train_sampler = SubsetRandomSampler(list(range(validation_index)))
         else:
-            return tensor
+            train_sampler = SubsetRandomSampler(list(range(len(dataset))))
+        training_data = DataLoader(dataset, batch_size=batch_size, sampler=train_sampler)
+        return training_data
 
     @staticmethod
-    def _pad_zeros(flattened_tensor: to.Tensor, desired_size: int) -> to.Tensor:
-        size_difference = abs(len(flattened_tensor) - desired_size)
-        flattened_tensor = to.cat((flattened_tensor, to.zeros(size_difference)))
-        return flattened_tensor
+    def _get_validation_split(batch_size: int, dataset: GraphDataset, validation_index: int, test_index: int) \
+            -> DataLoader:
+        if validation_index:
+            validation_sampler = SubsetRandomSampler(list(range(validation_index, test_index)))
+            validation_data = DataLoader(dataset, batch_size=batch_size, sampler=validation_sampler)
+        else:
+            validation_data = DataLoader(GraphDataset())
+        return validation_data
+
+    @staticmethod
+    def _get_test_split(batch_size: int, dataset: GraphDataset, test_index: int) -> DataLoader:
+        if test_index:
+            test_sampler = SubsetRandomSampler(list(range(test_index, len(dataset.dataset))))
+            test_data = DataLoader(dataset, batch_size=batch_size, sampler=test_sampler)
+        else:
+            test_data = DataLoader(GraphDataset())
+        return test_data
 
     @staticmethod
     def _get_validation_and_test_indexes(dataset: GraphDataset,
                                          validation_split: float,
                                          test_split: float) -> Tuple[int, int]:
-        validation_index = int((1 - validation_split - test_split) * len(dataset))
-        test_index = int((1 - test_split) * len(dataset))
+        validation_index = int((1 - validation_split - test_split) * len(dataset)) if validation_split else None
+        test_index = int((1 - test_split) * len(dataset)) if test_split else None
         return test_index, validation_index
-
-    def enable_test_mode(self) -> None:
-        self.test_mode = True
-
-    @staticmethod
-    def get_logger() -> logging.Logger:
-        return logging.getLogger('message_passing_nn')

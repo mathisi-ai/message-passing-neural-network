@@ -3,19 +3,21 @@ from torch.utils.cpp_extension import BuildExtension, CUDAExtension, CppExtensio
 
 setup(
     name='message-passing-nn',
-    version='1.6.0',
+    version='2.0.0',
     packages=find_packages(exclude=["tests"]),
-    url='https://github.com/kovanostra/message-passing-nn',
-    download_url='https://github.com/kovanostra/message-passing-nn/archive/1.6.0.tar.gz',
-    keywords=['MESSAGE PASSING', 'NEURAL NETWORK', 'RNN', 'GRU'],
+    url='https://github.com/mathisi-ai/message-passing-neural-network',
+    download_url='https://github.com/mathisi-ai/message-passing-neural-network/archive/2.0.0.tar.gz',
+    keywords=['MESSAGE PASSING', 'NEURAL NETWORK', 'RNN', 'GRAPH'],
     license='MIT',
     author='Michail Kovanis',
-    description='A message passing neural network with RNN or GRU units',
+    description='A message passing neural network with RNN units',
     install_requires=[
         'click',
         'numpy==1.17.4',
         'pandas==1.0.3',
         'torch==1.5.0',
+        'torchvision==0.6.0',
+        'psycopg2==2.8.6',
         'tqdm'
     ],
     entry_points={

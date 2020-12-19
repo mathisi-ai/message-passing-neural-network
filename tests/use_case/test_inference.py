@@ -1,43 +1,47 @@
+import os
+from datetime import datetime
 from unittest import TestCase
 
 from message_passing_nn.data.data_preprocessor import DataPreprocessor
 from message_passing_nn.infrastructure.graph_dataset import GraphDataset
-from message_passing_nn.model import Inferencer
-from message_passing_nn.utils.model_selector import load_model
+from message_passing_nn.model import Loader, Inferencer
+from message_passing_nn.use_case import Inference
 from message_passing_nn.utils.postgres_connector import PostgresConnector
-from tests.fixtures.matrices_and_vectors import *
+from message_passing_nn.utils.saver import Saver
 from tests.fixtures.environment_variables import *
+from tests.fixtures.matrices_and_vectors import *
 from tests.fixtures.residue_list import map_amino_acid_codes
 
 
-class TestInferencer(TestCase):
-    def test_do_inference(self):
+class TestInference(TestCase):
+    def test_start(self):
         # Given
-        data_preprocessor = DataPreprocessor()
+        tests_model_directory = os.path.join("tests", "test_data",
+                                             "model-checkpoints-test",
+                                             "configuration&id__model&RNN__epochs&10__loss_function&MSE__optimizer"
+                                             "&Adagrad__batch_size&100__validation_split&0.2__test_split"
+                                             "&0.1__time_steps&1__validation_period&5",
+                                             "Epoch_5_model_state_dictionary.pth")
+        tests_results_directory = os.path.join('tests', 'results_inference')
         device = "cpu"
+        data_preprocessor = DataPreprocessor()
+        loader = Loader("RNN")
         inferencer = Inferencer(data_preprocessor, device)
-        data_dimensions = {"number_of_nodes": 4,
-                           "number_of_node_features": 4,
-                           "fully_connected_layer_input_size": 16,
-                           "fully_connected_layer_output_size": 8}
-        model = load_model("RNN")
-        model = model(time_steps=1,
-                      number_of_nodes=data_dimensions["number_of_nodes"],
-                      number_of_node_features=data_dimensions["number_of_node_features"],
-                      fully_connected_layer_input_size=data_dimensions["fully_connected_layer_input_size"],
-                      fully_connected_layer_output_size=data_dimensions["fully_connected_layer_output_size"])
+        saver = Saver(tests_model_directory, tests_results_directory)
         self.postgres_connector = PostgresConnector()
-        self._insert_test_data(1)
+        self._insert_test_data(dataset_size=1)
         dataset = GraphDataset(self.postgres_connector)
-        inference_data, _, _ = DataPreprocessor().train_validation_test_split(dataset, 1, 0.0, 0.0)
-        output_label_pairs_expected = [to.tensor((0, 1, 0, 2, 1, 2, 0, 0)), to.tensor((0, 1, 0, 2, 1, 2, 0, 0))]
+        inference = Inference(dataset, data_preprocessor, loader, inferencer, saver)
 
         # When
-        output_label_pairs = inferencer.do_inference(model, inference_data)
+        inference.start()
 
         # Then
-        self.assertEqual(output_label_pairs[0][0].squeeze().size(), output_label_pairs_expected[0].size())
-        self.assertEqual(output_label_pairs[0][1].squeeze().size(), output_label_pairs_expected[1].size())
+        filename_expected = datetime.now().strftime("%d-%b-%YT%H_%M") + "_distance_maps.pickle"
+        self.assertTrue(os.path.isfile(os.path.join(tests_results_directory, filename_expected)))
+
+        # Tear down
+        self._truncate_table()
 
     def _insert_test_data(self, dataset_size):
         self.postgres_connector.open_connection()

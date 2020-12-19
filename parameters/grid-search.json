@@ -1,0 +1,23 @@
+{
+  "POSTGRES_HOST": "localhost",
+  "POSTGRES_PORT": "5432",
+  "POSTGRES_USERNAME": "postgres",
+  "POSTGRES_PASSWORD": "postgres",
+  "DATABASE": "pdb_test",
+  "PENALTY_TABLE": "ramachandran",
+  "DATASET_TABLE": "test_dataset",
+  "MODEL_DIRECTORY": "output/model_checkpoints",
+  "RESULTS_DIRECTORY": "output/results_grid_search",
+  "DEVICE": "cpu",
+  "MODEL": ["RNN"],
+  "EPOCHS": [100],
+  "LOSS_FUNCTION": ["MSEPenalty"],
+  "SCALING_FACTOR": [0.01],
+  "PENALTY_DECIMALS": [2],
+  "OPTIMIZER": ["Adagrad"],
+  "BATCH_SIZE": [100],
+  "VALIDATION_SPLIT": [0.2],
+  "TEST_SPLIT": [0.1],
+  "TIME_STEPS": [1],
+  "VALIDATION_PERIOD": [7]
+}
