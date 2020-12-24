@@ -11,52 +11,31 @@ class LossWithPenalty:
         self.batch_size = batch_size
 
     def forward(self, outputs: to.Tensor, labels: to.Tensor, features: to.Tensor) -> to.Tensor:
-        loss_step_1 = self.loss_function(outputs, labels)
-        loss_step_2 = to.zeros_like(loss_step_1)
-        if self.penalty:
-            loss_step_2 = self._get_penalty_loss(features, outputs, loss_step_2)
-        return to.add(loss_step_1, loss_step_2)
-
-    def _get_penalty_loss(self, features: to.Tensor, outputs: to.Tensor, loss_step_2: to.Tensor) -> to.Tensor:
         batch_size = outputs.shape[0]
         number_of_nodes = features.shape[1]
+        loss = to.zeros((batch_size, number_of_nodes))
+        outputs = outputs.reshape(batch_size, number_of_nodes, 2)
+        labels = labels.reshape(batch_size, number_of_nodes, 2)
         for batch in range(batch_size):
-            counter = 0
-            batch_loss, counter = self._add_node_penalty(counter,
-                                                         features[batch],
-                                                         outputs[batch].reshape(number_of_nodes, 2),
-                                                         to.zeros_like(loss_step_2),
-                                                         number_of_nodes)
-            loss_step_2 += batch_loss / counter
-        return loss_step_2
+            for node_id in range(number_of_nodes):
+                if self._residue_exists(features[batch, node_id]):
+                    loss[batch, node_id] = self._get_node_error(outputs[batch, node_id], labels[batch, node_id])
+                    if self.penalty:
+                        loss[batch, node_id] += self._add_penalty(features[batch, node_id], outputs[batch, node_id])
+        return to.mean(loss)
 
-    def _add_node_penalty(self,
-                          counter: int,
-                          features: to.Tensor,
-                          outputs: to.Tensor,
-                          batch_loss: to.Tensor,
-                          number_of_nodes: int) -> Tuple[to.Tensor, int]:
-        for node_id in range(number_of_nodes):
-            one_hot_residue = features[node_id, :]
-            node_outputs = outputs[node_id]
-            node_penalty, counter = self._get_node_penalty(one_hot_residue, node_outputs, counter)
-            batch_loss += node_penalty
-        return batch_loss, counter
+    @staticmethod
+    def _get_node_error(outputs: to.Tensor, labels: to.Tensor):
+        phi_squared_error = (outputs[0] - labels[0]) ** 2
+        psi_squared_error = (outputs[1] - labels[1]) ** 2
+        return to.sqrt(phi_squared_error + psi_squared_error)
 
-    def _get_node_penalty(self, one_hot_residue: to.Tensor, node_outputs: to.Tensor, counter: int) \
-            -> Tuple[to.Tensor, int]:
-        if self._residue_exists(one_hot_residue):
-            node_penalty = self._calculate_node_penalty(node_outputs, one_hot_residue)
-            counter += 1
-            return node_penalty, counter
-        else:
-            return to.tensor(0.0), counter
-
-    def _calculate_node_penalty(self, node_outputs: to.Tensor, one_hot_residue: to.Tensor) -> to.Tensor:
+    def _add_penalty(self, one_hot_residue: to.Tensor, node_outputs: to.Tensor) -> Tuple[to.Tensor, int]:
         penalty_index = self._get_residue_index(one_hot_residue)
         phi, psi = node_outputs[0].item(), node_outputs[1].item()
         phi_index, psi_index = self._get_index_of(phi), self._get_index_of(psi)
-        return self.scaling_factor * self.penalty[penalty_index][psi_index, phi_index]
+        node_penalty = self.scaling_factor * self.penalty[penalty_index][psi_index, phi_index]
+        return node_penalty
 
     @staticmethod
     def _get_residue_index(one_hot_residue: to.Tensor) -> int:
